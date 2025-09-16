@@ -1,5 +1,6 @@
-// 直接使用 JSON 导入
-import jsonData from '../config/movie.json' assert { type: 'json' };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const jsonData = require('../config/movie.json');
 
 import { cleanHtmlTags } from './utils/movie.js';
 
@@ -107,12 +108,12 @@ export async function searchFromApi(
 ) { //: Promise<SearchResult[]> 
     try {
         const apiBaseUrl = apiSite.api;
-        let apiUrl =
+        const apiUrl =
             apiBaseUrl + API_CONFIG.prep + API_CONFIG.search.path + encodeURIComponent(query);
         const apiName = apiSite.name;
 
         if (apiSite.fullurl) {
-            apiUrl = apiSite.fullurl;
+            apiUrl = apiBaseUrl  + API_CONFIG.search.path + encodeURIComponent(query);
         }
 
         // 添加超时处理
@@ -290,9 +291,12 @@ export async function getDetailFromApi(
     if (apiSite.detail) {
         return handleSpecialSourceDetail(id, apiSite);
     }
-    const apiBaseUrl = apiSite.api;
-    //let apiUrl = apiBaseUrl + API_CONFIG.prep + API_CONFIG.detail.path + id;
+
+    // const detailUrl = `${apiSite.api}${API_CONFIG.detail.path}${id}`;
     const detailUrl = `${apiSite.api}${API_CONFIG.prep}${API_CONFIG.detail.path}${id}`;
+    if (apiSite.fullurl) {
+        detailUrl = `${apiSite.api}${API_CONFIG.detail.path}${id}`;
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -307,8 +311,6 @@ export async function getDetailFromApi(
     if (!response.ok) {
         throw new Error(`详情请求失败: ${response.status}`);
     }
-
-    console.log(detailUrl,'详情请求响应:', response.data);
 
     const data = await response.json();
 

@@ -319,6 +319,14 @@
             font-size: 11px;
         }
 
+        .movie-source {
+            background: #007bff;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
         .movie-tags {
             margin-left: auto;
             display: flex;
@@ -762,6 +770,7 @@
                             <div class="movie-tags">
                                 ${movie.type_name ? `<span class="movie-type">${movie.type_name}</span>` : ''}
                                 ${movie.douban_id && movie.douban_id > 0 ? `<span class="movie-rating">豆瓣</span>` : ''}
+                                ${movie.source_name ? `<span class="movie-source" title="数据来源">${movie.source_name}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -808,8 +817,24 @@
                 currentMovies = results;
                 isSearchMode = true;
 
+                // 统计不同来源的结果数量
+                const sourceStats = {};
+                results.forEach(movie => {
+                    const sourceName = movie.source_name || '未知来源';
+                    sourceStats[sourceName] = (sourceStats[sourceName] || 0) + 1;
+                });
+                
+                // 构建来源统计信息
+                const sourceStatsText = Object.entries(sourceStats)
+                    .sort((a, b) => b[1] - a[1]) // 按数量倒序排列
+                    .map(([source, count]) => `${source}: ${count}`)
+                    .join(' | ');
+                
                 // 更新搜索结果信息
-                searchResultsInfo.textContent = `找到 ${results.length} 个相关结果`;
+                searchResultsInfo.innerHTML = `
+                    <div>找到 ${results.length} 个相关结果</div>
+                    <div style="font-size: 12px; color: #888; margin-top: 5px;">数据源分布: ${sourceStatsText}</div>
+                `;
                 
                 // 更新页面标题
                 document.querySelector('.page-title').textContent = `搜索结果`;
@@ -1095,7 +1120,7 @@
                 <div class="movie-card" data-id="${movie.id}" data-source="${movie.source}" data-douban-id="${movie.douban_id}">
                     <div class="movie-poster">
                         ${movie.poster ? 
-                            `<img src="${movie.poster}" alt="${movie.title}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>海报加载失败</span>'">${movie.is_new ? '<div class="new-badge">新</div>' : ''}` :
+                            `<img src="${movie.poster}" loading="lazy" referrerpolicy="no-referrer" alt="${movie.title}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span>海报加载失败</span>'">${movie.is_new ? '<div class="new-badge">新</div>' : ''}` :
                             '<span>暂无海报</span>'
                         }
                     </div>
