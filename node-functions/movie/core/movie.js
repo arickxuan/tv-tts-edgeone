@@ -108,7 +108,7 @@ export async function searchFromApi(
 ) { //: Promise<SearchResult[]> 
     try {
         const apiBaseUrl = apiSite.api;
-        const apiUrl =
+        let apiUrl =
             apiBaseUrl + API_CONFIG.prep + API_CONFIG.search.path + encodeURIComponent(query);
         const apiName = apiSite.name;
 
@@ -293,7 +293,7 @@ export async function getDetailFromApi(
     }
 
     // const detailUrl = `${apiSite.api}${API_CONFIG.detail.path}${id}`;
-    const detailUrl = `${apiSite.api}${API_CONFIG.prep}${API_CONFIG.detail.path}${id}`;
+    let detailUrl = `${apiSite.api}${API_CONFIG.prep}${API_CONFIG.detail.path}${id}`;
     if (apiSite.fullurl) {
         detailUrl = `${apiSite.api}${API_CONFIG.detail.path}${id}`;
     }
