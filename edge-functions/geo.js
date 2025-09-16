@@ -1,24 +1,24 @@
-interface EORequest extends Request {
-    eo: {
-      geo: {
-        asn: number;
-        countryName: string;
-        countryCodeAlpha2: string;
-        countryCodeAlpha3: string;
-        countryCodeNumeric: string;
-        regionName: string;
-        regionCode: string;
-        cityName: string;
-        latitude: number;
-        longitude: number;
-        cisp: string;
-      };
-      uuid: string;
-      clientIp: string;
-    };
-  }
+// interface EORequest extends Request {
+//     eo: {
+//       geo: {
+//         asn: number;
+//         countryName: string;
+//         countryCodeAlpha2: string;
+//         countryCodeAlpha3: string;
+//         countryCodeNumeric: string;
+//         regionName: string;
+//         regionCode: string;
+//         cityName: string;
+//         latitude: number;
+//         longitude: number;
+//         cisp: string;
+//       };
+//       uuid: string;
+//       clientIp: string;
+//     };
+//   }
   
-  export function onRequest({ request }: { request: EORequest }) {
+  export function onRequest({ request }) {
     const eo = request.eo;
   
     return new Response(
