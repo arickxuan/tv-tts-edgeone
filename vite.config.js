@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  publicDir: 'libs',
+  publicDir: 'public',
   build: {
-    outDir: 'out',
+    outDir: 'dist',
     rollupOptions: {
       input: {
         index: 'index.html',
