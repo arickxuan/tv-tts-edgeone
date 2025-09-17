@@ -7,10 +7,10 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        index: 'index.html',
-        movie: 'movie.html',
-        player: 'player.html',
-        speech: 'speech.html'
+        index: 'public/index.html',
+        movie: 'public/movie.html',
+        player: 'public/player.html',
+        speech: 'public/speech.html'
       }
     }
   }

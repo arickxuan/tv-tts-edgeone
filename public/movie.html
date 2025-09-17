@@ -961,10 +961,15 @@
                 { text: '在豆瓣查看详情', action: () => {
                     window.open(`https://movie.douban.com/subject/${doubanId}/`, '_blank');
                 }},
-                { text: '搜索播放源', action: () => {
+                { text: '搜索播放源', action: async () => {
                     // 在当前页面搜索这部电影
                     document.getElementById('searchInput').value = title;
-                    performSearch();
+                    await performSearch();
+                    // 搜索完成后自动关闭弹出框
+                    const dialog = document.getElementById('movieActionDialog');
+                    if (dialog) {
+                        dialog.remove();
+                    }
                 }},
                 { text: '取消', action: () => {
                     // 关闭对话框
