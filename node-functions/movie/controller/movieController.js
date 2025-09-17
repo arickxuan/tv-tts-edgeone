@@ -226,7 +226,7 @@ class MovieController {
         // 转换为TVBox格式
         const tvboxConfig = {
             // 基础配置
-            spider: '/libs/pg.jar', // 可以根据需要添加爬虫jar包
+            spider: `${baseUrl}/libs/pg.jar`, // 可以根据需要添加爬虫jar包
             wallpaper: `${baseUrl}/libs/screenshot1.png`, // 使用项目截图作为壁纸
 
             // 影视源配置

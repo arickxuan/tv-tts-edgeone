@@ -21,20 +21,90 @@
 // export default app;
 
 import express from "express";
-import { createClient } from '@supabase/supabase-js'
+import { getDB } from "./supabase/db";
 import http from "http";
 const app = express();
 
 // Express 路由（与方法一相同的 HTML）
-app.get('/',async (req, res) => {
+app.get('/', async (req, res) => {
     // ... 相同的 HTML 代码
-    const supabaseUrl = process.env.SUPURL //'https://bhziqtdetzehtjngvjpy.supabase.co'
-    const supabaseKey = process.env.SUPSECRET
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    const { data, error } = await supabase.from('user').select()
-    res.json({h:req.headers,data});
+    const { data, error } = await getDB().from('user').select()
+    res.json({ h: req.headers, data });
 });
 
+app.post('/login', async (req, res) => {
+    let { email, password } = req.body
+    const { data, error } = await getDB().auth.signInWithPassword({
+        email: email,
+        password: password,
+    })
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+});
 
+app.post('/sign_up', async (req, res) => {
+    let { email, password } = req.body
+    const { data, error } = await getDB().auth.signUp({
+        email: email,
+        password: password,
+    })
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+});
+
+app.post('/logout', async (req, res) => {
+    const { data, error } = await getDB().auth.signOut()
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+});
+
+app.post('/insert', async (req, res) => {
+    let { table, data } = req.body
+    if (!table) {
+        res.status(400).json({ error: 'table is required' });
+    }
+    let obj = JSON.parse(data)
+    const { error } = await getDB().from(table).insert({data:data})
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+})
+
+app.post('/select', async (req, res) => {
+    let { id, table } = req.body
+    if (!table) {
+        res.status(400).json({ error: 'table is required' });
+    }
+    const { data,error } = await getDB().from(table).select()
+
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+})
+
+
+app.post('/update', async (req, res) => {
+    let {id, table, data } = req.body
+    if (!id) {
+        res.status(400).json({ error: 'id is required' });
+    }
+    if (!table) {
+        res.status(400).json({ error: 'table is required' });
+    }
+    let obj = JSON.parse(data)
+    const { error } = await getDB().from(table).update({data:data}).eq('id', id)
+    if (error) {
+        res.status(400).json({ error: error.message });
+    }
+    res.json({ data });
+})
 
 export default app;
