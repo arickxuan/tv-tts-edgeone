@@ -169,7 +169,7 @@ class MovieController {
             format = "json";
         }
         console.log(req.headers);
-        const host = req.headers.host || 'localhost:3000';
+        const host = req.headers["x-forwarded-host"] || 'localhost:3000';
         const protocol = req.headers['x-forwarded-proto'] || 'http';
         const baseUrl = `${protocol}://${host}`;
         // 读取当前配置

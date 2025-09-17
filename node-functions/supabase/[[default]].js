@@ -21,14 +21,20 @@
 // export default app;
 
 import express from "express";
+import { createClient } from '@supabase/supabase-js'
 import http from "http";
 const app = express();
 
 // Express 路由（与方法一相同的 HTML）
-app.get('/', (req, res) => {
+app.get('/',async (req, res) => {
     // ... 相同的 HTML 代码
-    res.json(req.headers);
+    const supabaseUrl = process.env.SUPURL //'https://bhziqtdetzehtjngvjpy.supabase.co'
+    const supabaseKey = process.env.SUPSECRET
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { data, error } = await supabase.from('user').select()
+    res.json({h:req.headers,data});
 });
+
 
 
 export default app;
