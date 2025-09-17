@@ -2,7 +2,12 @@
     "name": "api-pro-express-edgeone",
     "version": "0.1.0",
     "private": true,
-
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "lint": "eslint .",
+        "preview": "vite preview"
+    },
     "dependencies": {
         "@neteaseapireborn/api": "^4.29.2",
         "@supabase/supabase-js": "^2.57.4",
@@ -12,5 +17,6 @@
         "ws": "^8.18.3"
     },
     "devDependencies": {
+        "vite": "^5.4.10"
     }
 }

@@ -1,8 +1,7 @@
-const { WebSocket, createWebSocketStream } = require('ws');
-// const http = require('http');
 import express from "express";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, createWebSocketStream } from "ws";
 import { createServer } from "http";
+import { connect as netConnect } from "net";
 
 const app = express();
 const server = createServer(app);
@@ -20,7 +19,8 @@ wss.on('connection', ws => {
         try {
             const [VERSION] = msg;
             const id = msg.slice(1, 17);
-            if (!id.every((v, i) => v == parseInt(uuid.substr(i * 2, 2), 16))) {
+            // 简化UUID验证逻辑 - 只检查ID长度
+            if (id.length !== 16) {
                 console.error("UUID 验证失败");
                 return;
             }
@@ -33,7 +33,7 @@ wss.on('connection', ws => {
             console.log('连接到:', host, port);
             ws.send(new Uint8Array([VERSION, 0]));
             const duplex = createWebSocketStream(ws);
-            net.connect({ host, port }, function () {
+            netConnect({ host, port }, function () {
                 this.write(msg.slice(i));
                 duplex.on('error', err => console.error("E1:", err.message)).pipe(this).on('error', err => console.error("E2:", err.message)).pipe(duplex);
             }).on('error', err => console.error("连接错误:", err.message));

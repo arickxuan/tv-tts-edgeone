@@ -168,6 +168,7 @@ class MovieController {
         if (format == "") {
             format = "json";
         }
+        console.log(req.headers);
         const host = req.headers.host || 'localhost:3000';
         const protocol = req.headers['x-forwarded-proto'] || 'http';
         const baseUrl = `${protocol}://${host}`;
@@ -181,41 +182,55 @@ class MovieController {
             return NextResponse.json({ error: '没有配置任何视频源' }, { status: 500 });
         }
 
+        let siteArr = sourceConfigs.map((source) => {
+            // 更智能的type判断逻辑：
+            // 1. 如果api地址包含 "/provide/vod" 且不包含 "at/xml"，则认为是JSON类型 (type=1)
+            // 2. 如果api地址包含 "at/xml"，则认为是XML类型 (type=0)
+            // 3. 如果api地址以 ".json" 结尾，则认为是JSON类型 (type=1)
+            // 4. 其他情况默认为JSON类型 (type=1)，因为现在大部分都是JSON
+            let type = 1; // 默认为JSON类型
+
+            const apiLower = source.api.toLowerCase();
+            if (apiLower.includes('at/xml') || apiLower.endsWith('.xml')) {
+                type = 0; // XML类型
+            }
+
+            return {
+                key: source.key || source.name,
+                name: source.name,
+                type: type, // 使用智能判断的type
+                api: source.api,
+                searchable: 1, // 可搜索
+                quickSearch: 1, // 支持快速搜索
+                filterable: 1, // 支持分类筛选
+                ext: source.detail || '', // 详情页地址作为扩展参数
+                timeout: 30, // 30秒超时
+                categories: [
+                    "电影", "电视剧", "综艺", "动漫", "纪录片", "短剧"
+                ]
+            };
+        })
+
+        siteArr[0] = {
+			"key": "豆瓣",
+			"name": "豆瓣",
+			"type": 3,
+			"api": "csp_Douban",
+			"searchable": 0,
+			"changeable": 1,
+			"indexs":1,
+			"ext": "/libs/tokenm.json$$$/libs/douban.json"
+		}
+
+
         // 转换为TVBox格式
         const tvboxConfig = {
             // 基础配置
-            spider: '', // 可以根据需要添加爬虫jar包
-            wallpaper: `${baseUrl}/screenshot1.png`, // 使用项目截图作为壁纸
+            spider: '/libs/pg.jar', // 可以根据需要添加爬虫jar包
+            wallpaper: `${baseUrl}/libs/screenshot1.png`, // 使用项目截图作为壁纸
 
             // 影视源配置
-            sites: sourceConfigs.map((source) => {
-                // 更智能的type判断逻辑：
-                // 1. 如果api地址包含 "/provide/vod" 且不包含 "at/xml"，则认为是JSON类型 (type=1)
-                // 2. 如果api地址包含 "at/xml"，则认为是XML类型 (type=0)
-                // 3. 如果api地址以 ".json" 结尾，则认为是JSON类型 (type=1)
-                // 4. 其他情况默认为JSON类型 (type=1)，因为现在大部分都是JSON
-                let type = 1; // 默认为JSON类型
-
-                const apiLower = source.api.toLowerCase();
-                if (apiLower.includes('at/xml') || apiLower.endsWith('.xml')) {
-                    type = 0; // XML类型
-                }
-
-                return {
-                    key: source.key || source.name,
-                    name: source.name,
-                    type: type, // 使用智能判断的type
-                    api: source.api,
-                    searchable: 1, // 可搜索
-                    quickSearch: 1, // 支持快速搜索
-                    filterable: 1, // 支持分类筛选
-                    ext: source.detail || '', // 详情页地址作为扩展参数
-                    timeout: 30, // 30秒超时
-                    categories: [
-                        "电影", "电视剧", "综艺", "动漫", "纪录片", "短剧"
-                    ]
-                };
-            }),
+            sites: siteArr,
 
             // 解析源配置（添加一些常用的解析源）
             parses: [
