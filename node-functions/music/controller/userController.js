@@ -177,8 +177,8 @@ class UserController {
     }
 
     async importSonglist(req, res) {
-        const { sid, url, source_type,source_id, from_qq, from_netease, from_kuwo, from_kugou, } = req.body;
-        if (!sid || !source_type || !source_id) {
+        const {  url, source_type,source_id, from_qq, from_netease, from_kuwo, from_kugou, } = req.body;
+        if (  !source_type || !source_id) {
             res.status(400).json({ error: 'sid source_type source_id is required' });
             return;
         }
