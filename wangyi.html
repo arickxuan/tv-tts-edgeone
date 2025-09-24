@@ -2035,7 +2035,7 @@
                             <select id="importSource" name="source" required>
                                 <option value="">请选择音乐平台</option>
                                 <option value="netease">网易云音乐</option>
-                                <option value="tencent">QQ音乐</option>
+                                <option value="qq">QQ音乐</option>
                                 <option value="kuwo">酷我音乐</option>
                                 <option value="kugou">酷狗音乐</option>
                             </select>
@@ -2192,7 +2192,7 @@
                             <select id="importPlaylistSource" name="source" required>
                                 <option value="">请选择音乐平台</option>
                                 <option value="netease">网易云音乐</option>
-                                <option value="tencent">QQ音乐</option>
+                                <option value="qq">QQ音乐</option>
                                 <option value="kuwo">酷我音乐</option>
                                 <option value="kugou">酷狗音乐</option>
                             </select>
@@ -3494,7 +3494,7 @@
             }
             // QQ音乐
             else if (url.includes('y.qq.com')) {
-                source = 'tencent';
+                source = 'qq';
                 const match = url.match(/taodanId=(\d+)|id=(\d+)/);
                 if (match) id = match[1] || match[2];
             }
