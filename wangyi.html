@@ -1679,7 +1679,7 @@
             overflow: hidden;
         }
 
-        .switch-input:checked + .switch-slider {
+        .switch-input:checked+.switch-slider {
             background: linear-gradient(135deg, #4caf50, #45a049);
             border-color: #4caf50;
             box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
@@ -1697,7 +1697,7 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
 
-        .switch-input:checked + .switch-slider .switch-button {
+        .switch-input:checked+.switch-slider .switch-button {
             transform: translateX(30px);
         }
 
@@ -1721,11 +1721,11 @@
             opacity: 1;
         }
 
-        .switch-input:checked + .switch-slider .switch-text-on {
+        .switch-input:checked+.switch-slider .switch-text-on {
             opacity: 1;
         }
 
-        .switch-input:checked + .switch-slider .switch-text-off {
+        .switch-input:checked+.switch-slider .switch-text-off {
             opacity: 0;
         }
 
@@ -1733,7 +1733,7 @@
             background: rgba(255, 255, 255, 0.25);
         }
 
-        .switch-input:checked + .switch-slider:hover {
+        .switch-input:checked+.switch-slider:hover {
             background: linear-gradient(135deg, #45a049, #3d8b40);
         }
     </style>
@@ -1853,11 +1853,13 @@
                             <button class="refresh-btn" onclick="loadUserPlaylists()" title="刷新歌单">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
-                            <button class="header-action-btn create-btn" onclick="showCreatePlaylistModal()" title="新建歌单">
+                            <button class="header-action-btn create-btn" onclick="showCreatePlaylistModal()"
+                                title="新建歌单">
                                 <i class="fas fa-plus"></i>
                                 <span>新建</span>
                             </button>
-                            <button class="header-action-btn import-playlist-btn" onclick="showImportPlaylistModal()" title="导入歌单">
+                            <button class="header-action-btn import-playlist-btn" onclick="showImportPlaylistModal()"
+                                title="导入歌单">
                                 <i class="fas fa-file-import"></i>
                                 <span>导入</span>
                             </button>
@@ -2352,20 +2354,100 @@
             }
         }
 
+        let usedSources = [];
         //
-        async function searchMusiBy(keyword,source="netease") {
+        async function searchMusiBy(keyword, artist) {
+            let allSources = ["netease", "qq", "kuwo", "kugou"];
+            let source = ""
+            for (const item of allSources) {
+                if (!usedSources.includes(item)) {
+                    source = item
+                    break
+                }
+            }
+            if (source == "") {
+                return "error"
+            }
+
             try {
                 const response = await fetch(`${API_BASE}?types=search&source=${source}&name=${encodeURIComponent(keyword)}&count=30`);
                 const data = await response.json();
 
                 if (data && data.length > 0) {
-                    console.log("searchMusiBy",data)
+                    // TODO:  fix
+                    for (const item of data) {
+                        if (item.artist.includes(artist)) {
+                            if (item.name == keyword) {
+                                return item
+                            }
+                        }
+                    }
                 } else {
                     return "error"
                 }
             } catch (error) {
-                console.log("searchMusiBy",error)
+                console.log("searchMusiBy", error)
                 return "error"
+            }
+        }
+        // 播放歌曲
+        async function playSongBy(song) {
+            // 获取当前选择的音质
+            const quality = document.getElementById('qualitySelect').value;
+
+            // 获取音乐URL
+            const urlResponse = await fetch(`${API_BASE}?types=url&source=${song.source}&id=${song.id}&br=${quality}`);
+            const urlData = await urlResponse.json();
+
+            if (urlData && urlData.url) {
+                audioPlayer.src = urlData.url;
+                audioPlayer.load();
+
+                // 获取歌词
+                loadLyrics(song);
+
+                // 启用下载按钮
+                document.getElementById('downloadSongBtn').disabled = false;
+                document.getElementById('downloadLyricBtn').disabled = false;
+
+                // 自动播放
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        isPlaying = true;
+                        updatePlayButton();
+                        currentCover.classList.add('playing');
+
+                        // 开始可视化
+                        try {
+                            startVisualization();
+                        } catch (e) {
+                            console.error('启动音频可视化失败:', e);
+                            // 即使可视化失败，也要确保音乐能正常播放
+                        }
+                        console.log("开始播放 song", song)
+                        showNotification(`开始播放 (${getQualityText(urlData.br || quality)})`, 'success');
+                        return song;
+                    }).catch(error => {
+                        console.error('播放失败:', error);
+                        showNotification('播放失败，请尝试其他歌曲', 'error');
+                        return false;
+                    });
+                }
+            } else {
+                //TODO: 获取音乐链接失败，请尝试其他音源
+                showNotification('无法获取音乐链接，请尝试其他歌曲或更换音质', 'error');
+                usedSources.push(song.source)
+                if(usedSources.length = 4){
+                    showNotification('已尝试4大音源', 'error');
+                    return false;
+                }
+                let re = await searchMusiBy(song.name, song.artist)
+                if (re != "error") {
+                    playSongBy(re)
+                }
+                
+
             }
         }
         // 播放歌曲
@@ -2382,52 +2464,12 @@
 
             try {
                 showNotification('正在加载音乐...', 'info');
-
-                // 获取当前选择的音质
-                const quality = document.getElementById('qualitySelect').value;
-
-                // 获取音乐URL
-                const urlResponse = await fetch(`${API_BASE}?types=url&source=${song.source}&id=${song.id}&br=${quality}`);
-                const urlData = await urlResponse.json();
-
-                if (urlData && urlData.url) {
-                    audioPlayer.src = urlData.url;
-                    audioPlayer.load();
-
-                    // 获取歌词
-                    loadLyrics(song);
-
-                    // 启用下载按钮
-                    document.getElementById('downloadSongBtn').disabled = false;
-                    document.getElementById('downloadLyricBtn').disabled = false;
-
-                    // 自动播放
-                    const playPromise = audioPlayer.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            isPlaying = true;
-                            updatePlayButton();
-                            currentCover.classList.add('playing');
-
-                            // 开始可视化
-                            try {
-                                startVisualization();
-                            } catch (e) {
-                                console.error('启动音频可视化失败:', e);
-                                // 即使可视化失败，也要确保音乐能正常播放
-                            }
-
-                            showNotification(`开始播放 (${getQualityText(urlData.br || quality)})`, 'success');
-                        }).catch(error => {
-                            console.error('播放失败:', error);
-                            showNotification('播放失败，请尝试其他歌曲', 'error');
-                        });
-                    }
-                } else {
-                    //TODO: 获取音乐链接失败，请尝试其他音源
-                    let re = await searchMusiBy()
-                    showNotification('无法获取音乐链接，请尝试其他歌曲或更换音质', 'error');
+                usedSources = [];
+                let newSong = await playSongBy(song)
+                if(usedSources.length > 0){
+                    // TODO: 更换音源id
                 }
+
             } catch (error) {
                 console.error('播放失败:', error);
                 showNotification('播放失败，请检查网络连接', 'error');
@@ -3042,7 +3084,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登录中...';
 
             try {
-                const response = await fetch(API+'/supabase/login', {
+                const response = await fetch(API + '/supabase/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3065,7 +3107,7 @@
                     closeLoginModal();
                     // 更新UI显示登录状态
                     updateAuthUI();
-                    console.log('登录成功:', data);
+                    // console.log('登录成功:', data);
                 } else {
                     showNotification(data.message || '登录失败，请检查邮箱和密码', 'error');
                 }
@@ -3268,7 +3310,7 @@
                 // 从localStorage中获取token，去掉双引号
                 const cleanToken = JSON.parse(token);
 
-                const response = await fetch('/music/songlist', {
+                const response = await fetch(API + '/music/songlist', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3277,7 +3319,6 @@
                 });
 
                 const data = await response.json();
-                console.log("data", data);
                 if (response.ok && data.data && data.data.length > 0) {
                     currentUserPlaylists = data.data;
                     displayUserPlaylists(data.data);
@@ -3392,7 +3433,7 @@
             try {
                 const cleanToken = JSON.parse(token);
 
-                const response = await fetch(`/music/songlist/item?sid=${playlist.id}`, {
+                const response = await fetch(API + `/music/songlist/item?sid=${playlist.id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3658,7 +3699,7 @@
             document.getElementById('editTitle').value = currentEditPlaylist.title || '';
             document.getElementById('editFromNeteasa').value = currentEditPlaylist.from_neteasa || '';
             document.getElementById('editFromKuwo').value = currentEditPlaylist.from_kuwo || '';
-            
+
             // 设置同步开关状态（大于0为开启）
             document.getElementById('editSyncId').checked = (currentEditPlaylist.sync_id || 0) > 0;
         }
@@ -3697,7 +3738,7 @@
 
                 // 获取同步开关状态
                 const syncIdChecked = document.getElementById('editSyncId').checked;
-                
+
                 const requestData = {
                     id: parseInt(formData.get('id')),
                     title: formData.get('title'),
@@ -3740,7 +3781,7 @@
         function showCreatePlaylistModal() {
             const modal = document.getElementById('createPlaylistModal');
             modal.classList.remove('modal-hidden');
-            
+
             // 重置表单
             document.getElementById('createPlaylistForm').reset();
             // 聚焦到歌单名称输入框
@@ -3762,7 +3803,7 @@
         // 处理新建歌单提交
         async function handleCreatePlaylist(event) {
             event.preventDefault();
-            
+
             const token = localStorage.getItem('token');
             if (!token) {
                 showNotification('请先登录', 'warning');
@@ -3785,7 +3826,7 @@
 
             try {
                 const cleanToken = JSON.parse(token);
-                
+
                 const response = await fetch('/music/songlist', {
                     method: 'POST',
                     headers: {
@@ -3798,7 +3839,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok && data.code === 0) {
                     showNotification('歌单创建成功！', 'success');
                     closeCreatePlaylistModal();
@@ -3822,7 +3863,7 @@
         function showImportPlaylistModal() {
             const modal = document.getElementById('importPlaylistModal');
             modal.classList.remove('modal-hidden');
-            
+
             // 重置表单
             document.getElementById('importPlaylistForm').reset();
             switchImportPlaylistTab('source');
@@ -3905,7 +3946,7 @@
         // 处理导入歌单提交
         async function handleImportPlaylist(event) {
             event.preventDefault();
-            
+
             const token = localStorage.getItem('token');
             if (!token) {
                 showNotification('请先登录', 'warning');
@@ -3926,7 +3967,7 @@
             } else {
                 const url = formData.get('url');
                 const preview = document.getElementById('urlPlaylistPreview');
-                
+
                 if (url && !preview.classList.contains('hidden')) {
                     // 解析URL获取source和sourceId
                     if (url.includes('music.163.com')) {
@@ -3960,7 +4001,7 @@
 
             try {
                 const cleanToken = JSON.parse(token);
-                
+
                 const response = await fetch('/music/songlist/import', {
                     method: 'POST',
                     headers: {
@@ -3974,7 +4015,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok && data.code === 0) {
                     showNotification('歌单导入成功！', 'success');
                     closeImportPlaylistModal();
