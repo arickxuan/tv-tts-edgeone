@@ -27,6 +27,7 @@ export class MusicService {
       const data = await response.json();
 
       if (!data.data || !data.data.cdlist || data.data.cdlist.length === 0) {
+        console.log("data",url, data.data);
         throw new Error('获取歌单数据失败');
       }
 

@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" /> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎙️ TTS 服务终极测试页面 (v3.0 - EdgeOne Pages版)</title>
   <style>
     :root {
@@ -57,6 +58,7 @@
       max-width: 800px;
       width: 100%;
       background-color: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       padding: 2rem;
       border-radius: 16px;
@@ -576,14 +578,14 @@
         <div class="form-group">
           <label>语速</label>
           <div class="slider-group">
-            <input type="range" v-model.number="form.speed" @input="saveForm" min="0.25" max="2.0" step="0.05" />
+            <input type="range" v-model.number="form.speed" placeholder="语速" @input="saveForm" min="0.25" max="2.0" step="0.05" />
             <span v-cloak>{{ speedDisplay }}</span>
           </div>
         </div>
         <div class="form-group">
           <label>音调</label>
           <div class="slider-group">
-            <input type="range" v-model.number="form.pitch" @input="saveForm" min="0.5" max="1.5" step="0.05" />
+            <input type="range" v-model.number="form.pitch" placeholder="音调" @input="saveForm" min="0.5" max="1.5" step="0.05" />
             <span v-cloak>{{ pitchDisplay }}</span>
           </div>
         </div>

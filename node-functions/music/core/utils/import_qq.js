@@ -23,6 +23,43 @@ export async function getList(id, isProxy) {
 
 }
 
+export async function getListByNetease( playlistId, isProxy=false) {
+    let baseUrl = "https://music-api.gdstudio.xyz/api.php"
+    const response = await fetch(`${baseUrl}?types=playlist&id=${playlistId}&source=netease`);
+    const data = await response.json();
+    console.log("getListByNetease", data);
+    let songs = [];
+    // 操，这个API返回的数据结构真他妈乱，得兼容好几种
+    if (data && data.playlist && data.playlist.tracks) {
+        songs = data.playlist.tracks.map(track => ({
+            title: track.name,
+            name: track.name,
+            artist: track.ar.map(a => a.name).join(' / '),
+            singers: track.ar.map(a => a.name),
+            album: track.al.name,
+            id: track.id,
+            wangyi_id: track.id,
+            pic_id: track.al.pic_id_str || track.al.pic_str || track.al.pic,
+            lyric_id: track.id,
+            source: 'netease'
+        }));
+    } else if (data && data.tracks) {
+        songs = data.tracks.map(track => ({
+            title: track.name,
+            name: track.name,
+            artist: track.ar.map(a => a.name).join(' / '),
+            singers: track.ar.map(a => a.name),
+            album: track.al.name,
+            id: track.id,
+            wangyi_id: track.id,
+            pic_id: track.al.pic_id_str || track.al.pic_str || track.al.pic,
+            lyric_id: track.id,
+            source: 'netease'
+        }));
+    }
+    return songs;
+}
+
 export async function downloadMusic(id, type, qua = "standard") {
     // https://88.lxmusic.xn--fiqs8s/lxmusicv3/url/tx/576366/320k
     // kw/kg/tx/wy/mg/local

@@ -38,6 +38,10 @@ export default {
     proxy: "https://cors.zme.ink/",
     baseUrl: "https://c.y.qq.com/v8/fcg-bin/fcg_v8_playlist_cp.fcg"
   },
+  gd:{
+    proxy: "https://cors.zme.ink/",
+    baseUrl: "https://music-api.gdstudio.xyz/api.php"
+  },
   spotify: {
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,

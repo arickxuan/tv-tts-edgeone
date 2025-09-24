@@ -63,6 +63,21 @@ app.post('/logout', async (req, res) => {
     }
     res.json({ data });
 });
+app.get('/refresh_access_token', async (req, res) => {
+    // async function refreshAccessToken() {
+    const refresh_token = req.headers["refresh_token"];
+    if (!refresh_token) {
+        return res.status(401).json({ error: "No refresh_token provided" });
+    }
+    const { data: session, error } = await getDB().auth.refreshSession({ refresh_token });
+
+    if (error) {
+        console.error('Error refreshing session:', error);
+        return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ access_token: session.session.access_token,refresh_token: session.session.refresh_token });
+})
 
 app.post('/insert', async (req, res) => {
     let { table, data } = req.body
@@ -70,7 +85,7 @@ app.post('/insert', async (req, res) => {
         res.status(400).json({ error: 'table is required' });
     }
     let obj = JSON.parse(data)
-    const { error } = await getDB().from(table).insert({data:data})
+    const { error } = await getDB().from(table).insert({ data: data })
     if (error) {
         res.status(400).json({ error: error.message });
     }
@@ -82,7 +97,7 @@ app.post('/select', async (req, res) => {
     if (!table) {
         res.status(400).json({ error: 'table is required' });
     }
-    const { data,error } = await getDB().from(table).select()
+    const { data, error } = await getDB().from(table).select()
 
     if (error) {
         res.status(400).json({ error: error.message });
@@ -92,7 +107,7 @@ app.post('/select', async (req, res) => {
 
 
 app.post('/update', async (req, res) => {
-    let {id, table, data } = req.body
+    let { id, table, data } = req.body
     if (!id) {
         res.status(400).json({ error: 'id is required' });
     }
@@ -100,7 +115,7 @@ app.post('/update', async (req, res) => {
         res.status(400).json({ error: 'table is required' });
     }
     let obj = JSON.parse(data)
-    const { error } = await getDB().from(table).update({data:data}).eq('id', id)
+    const { error } = await getDB().from(table).update({ data: data }).eq('id', id)
     if (error) {
         res.status(400).json({ error: error.message });
     }

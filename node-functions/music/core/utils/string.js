@@ -74,3 +74,66 @@ export function mergeSongList(list, s3arr) {
 
     return list;
 }
+
+export function syncSongListByQQ(list, sbArr,sid,uid) {
+    let { songList } = list;
+    let newList = [];
+
+    // 第一部分：更新匹配歌曲的URL
+    songList.forEach(song => {
+        const cleanSongTitle = getCleanTitle(song.title);
+        const matchingS3Item = sbArr.find(item => {
+            const cleanS3Title = getCleanTitle(item.title);
+            return cleanSongTitle === cleanS3Title;
+        });
+
+        if (matchingS3Item) {
+        }else{
+            // console.log("notContains", song.title)
+            let newSong = {
+                sid:sid,
+                uid:uid,
+                title: song.title,
+                name: cleanSongTitle,
+                album: song.album,
+                qq_id: song.mid,
+                // singers: JSON.stringify(song.singers),
+                singers: song.singers,
+            }
+            newList.push(newSong);
+        }
+    });
+
+    return newList;
+}
+
+export function syncSongListByNetease(songList, sbArr,sid,uid) {
+    let newList = [];
+
+    // 第一部分：更新匹配歌曲的URL
+    songList.forEach(song => {
+        const cleanSongTitle = getCleanTitle(song.title);
+        const matchingS3Item = sbArr.find(item => {
+            const cleanS3Title = getCleanTitle(item.title);
+            return cleanSongTitle === cleanS3Title;
+        });
+
+        if (matchingS3Item) {
+        }else{
+            // console.log("notContains", song.title)
+            let newSong = {
+                sid:sid,
+                uid:uid,
+                title: song.title,
+                name: cleanSongTitle,
+                album: song.album,
+                wangyi_id: song.wangyi_id,
+                // singers: JSON.stringify(song.singers),
+                singers: song.singers,
+            }
+            newList.push(newSong);
+        }
+    });
+
+    return newList;
+}
