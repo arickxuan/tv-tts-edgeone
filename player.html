@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视频播放 - KatelyaTV</title>
-    <!-- 引入必要的库（作为静态资源，不参与打包） -->
+    <!-- 引入必要的库 -->
     <script src="./libs/hls.min.js"></script>
     <script src="./libs/artplayer.min.js"></script>
     <style>
@@ -170,6 +170,94 @@
 
         .search-results-info.hidden {
             display: none;
+        }
+
+        /* 网址输入框样式 */
+        .url-section {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .url-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .url-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .url-input {
+            flex: 1;
+            height: 40px;
+            padding: 0 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        .url-input:focus {
+            border-color: #ff6b9d;
+            box-shadow: 0 0 0 2px rgba(255, 107, 157, 0.1);
+        }
+
+        .url-input::placeholder {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .url-btn {
+            height: 40px;
+            padding: 0 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .url-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .url-btn:active {
+            transform: translateY(0);
+        }
+
+        .url-btn.loading {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .url-tips {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .tip-text {
+            font-size: 12px;
+            color: #6c757d;
+            background: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
         }
 
         .container {
@@ -376,6 +464,96 @@
             cursor: default;
         }
 
+        /* 频道列表样式 */
+        .channel-group-title {
+            font-weight: bold;
+            color: #333;
+            padding: 10px 12px 5px;
+            background: #f8f9fa;
+            border-left: 3px solid #ff6b9d;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .channel-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .channel-item:hover {
+            border-color: #ff6b9d;
+            background: #fff5f8;
+        }
+
+        .channel-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .channel-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .channel-logo-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .channel-details {
+            flex: 1;
+        }
+
+        .channel-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+
+        .channel-url-short {
+            font-size: 11px;
+            color: #999;
+            font-family: monospace;
+        }
+
+        .channel-btn {
+            padding: 6px 16px;
+            border: 1px solid #28a745;
+            background: white;
+            color: #28a745;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .channel-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
         .quality-info {
             background: #f8f9fa;
             border-radius: 8px;
@@ -423,6 +601,68 @@
                 font-size: 12px;
                 padding: 0 5px;
             }
+
+            /* 移动端网址输入框适配 */
+            .url-section {
+                padding: 12px 10px;
+            }
+
+            .url-box {
+                flex-direction: column;
+                gap: 10px;
+                max-width: none;
+            }
+
+            .url-input,
+            .url-btn {
+                width: 100%;
+                max-width: none;
+            }
+
+            .url-btn {
+                justify-content: center;
+            }
+
+            .url-tips {
+                margin-top: 10px;
+            }
+
+            .tip-text {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+
+            /* 移动端频道列表适配 */
+            .channel-group-title {
+                font-size: 12px;
+                padding: 8px 10px 4px;
+            }
+
+            .channel-item {
+                padding: 8px 10px;
+                margin-bottom: 4px;
+            }
+
+            .channel-logo,
+            .channel-logo-placeholder {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+
+            .channel-name {
+                font-size: 13px;
+            }
+
+            .channel-url-short {
+                font-size: 10px;
+            }
+
+            .channel-btn {
+                padding: 4px 12px;
+                font-size: 11px;
+                min-width: 50px;
+            }
         }
     </style>
 </head>
@@ -456,6 +696,23 @@
                 </div>
             </div>
             <div class="search-results-info hidden" id="searchResultsInfo"></div>
+        </div>
+
+        <!-- 网址输入框区域 -->
+        <div class="url-section">
+            <div class="url-container">
+                <div class="url-box">
+                    <input type="text" class="url-input" id="urlInput"
+                        placeholder="输入视频直链或IPTV播放列表地址 (支持m3u8、mp4、m3u格式)" maxlength="500">
+                    <button class="url-btn" id="urlBtn">
+                        <span>▶️</span>
+                        <span id="urlBtnText">播放</span>
+                    </button>
+                </div>
+                <div class="url-tips">
+                    <span class="tip-text">💡 支持视频直链 (m3u8、mp4、flv) 和 IPTV播放列表 (m3u)</span>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -527,6 +784,7 @@
         let autoplayEnabled = true;
         let userClickedPosition = null;
         let availableSources = []; // 存储可用的视频源
+        let channelList = []; // 存储频道列表
 
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -542,13 +800,13 @@
             const episodeText = parseInt(index) > 0 ? ` 第${parseInt(index) + 1}集` : '';
             const pageTitle = `${title}${episodeText} - KatelyaTV`;
             document.title = pageTitle;
-            
+
             // 更新视频标题
             const videoTitleElement = document.querySelector('.video-title h1');
             if (videoTitleElement) {
                 videoTitleElement.textContent = title;
             }
-            
+
             // 更新面包屑导航
             const breadcrumbElement = document.querySelector('.breadcrumb');
             if (breadcrumbElement) {
@@ -557,10 +815,10 @@
                     <a href="#">${title}</a>${episodeInfo}
                 `;
             }
-            
+
             // 更新全局视频标题变量
             videoTitle = title + episodeText;
-            
+
             console.log('页面内容已更新:', { title, index, pageTitle });
         }
 
@@ -577,10 +835,10 @@
             console.log(data);
             currentEpisodes = data.episodes;
             currentVideoUrl = data.episodes[index];
-            
+
             // 更新选集显示
             updateEpisodesDisplay(data.episodes, parseInt(index));
-            
+
             return data.episodes[index];
         }
 
@@ -638,7 +896,7 @@
             document.querySelectorAll('.episode-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             const targetBtn = document.querySelector(`[data-episode-index="${episodeIndex}"]`);
             if (targetBtn) {
                 targetBtn.classList.add('active');
@@ -663,7 +921,7 @@
                 console.log('搜索视频源:', searchTitle);
                 const response = await fetch(`/movie/search?q=${encodeURIComponent(searchTitle)}`);
                 const data = await response.json();
-                
+
                 if (data && data.results && Array.isArray(data.results)) {
                     availableSources = data.results;
                     console.log(`找到 ${availableSources.length} 个视频源:`, availableSources);
@@ -682,7 +940,7 @@
         function updateSourcesDisplay() {
             const episodeGrid = document.querySelector('.episode-grid');
             episodeGrid.classList.add('sources-mode');
-            
+
             if (availableSources.length === 0) {
                 episodeGrid.innerHTML = `
                     <div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #666;">
@@ -690,7 +948,7 @@
                         <div style="font-size: 14px; opacity: 0.7;">请稍候</div>
                     </div>
                 `;
-                
+
                 // 开始搜索
                 searchVideoSources(title).then(sources => {
                     if (sources.length > 0) {
@@ -712,13 +970,13 @@
         // 渲染视频源列表
         function renderSourcesList(sources) {
             const episodeGrid = document.querySelector('.episode-grid');
-            
+
             let sourcesHtml = '';
             sources.forEach((sourceItem, index) => {
                 const isCurrentSource = sourceItem.source === source;
                 const buttonClass = isCurrentSource ? 'source-btn current' : 'source-btn';
                 const buttonText = isCurrentSource ? '当前线路' : '切换';
-                
+
                 sourcesHtml += `
                     <div class="source-item" data-source-index="${index}">
                         <div class="source-info">
@@ -730,9 +988,9 @@
                     </div>
                 `;
             });
-            
+
             episodeGrid.innerHTML = sourcesHtml;
-            
+
             // 绑定切换事件
             bindSourceSwitchEvents();
         }
@@ -740,7 +998,7 @@
         // 绑定视频源切换事件
         function bindSourceSwitchEvents() {
             document.querySelectorAll('.source-btn:not(.current)').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const sourceIndex = parseInt(this.getAttribute('data-source-index'));
                     switchToSource(sourceIndex);
                 });
@@ -759,7 +1017,7 @@
 
             // 构建新的播放器URL
             const newUrl = `player.html?id=${newSource.id}&source=${newSource.source}&index=0&title=${encodeURIComponent(newSource.title)}`;
-            
+
             // 跳转到新源
             window.location.href = newUrl;
         }
@@ -768,10 +1026,10 @@
         function updatePageContentForEpisode(episodeIndex) {
             const episodeText = episodeIndex >= 0 ? ` 第${episodeIndex + 1}集` : '';
             const pageTitle = `${title}${episodeText} - KatelyaTV`;
-            
+
             // 更新页面标题
             document.title = pageTitle;
-            
+
             // 更新面包屑导航
             const breadcrumbElement = document.querySelector('.breadcrumb');
             if (breadcrumbElement) {
@@ -780,10 +1038,10 @@
                     <a href="#">${title}</a>${episodeInfo}
                 `;
             }
-            
+
             // 更新全局视频标题变量
             videoTitle = title + episodeText;
-            
+
             console.log('页面内容已更新为集数:', episodeIndex + 1);
         }
 
@@ -815,7 +1073,7 @@
                 console.warn('Hls.js not properly loaded, falling back to default loader');
                 return window.Hls ? window.Hls.DefaultConfig.loader : null;
             }
-            
+
             class CustomHlsJsLoader extends window.Hls.DefaultConfig.loader {
                 constructor(config) {
                     super(config);
@@ -1615,11 +1873,11 @@
                 } else {
                     // 切换回选集标签，恢复选集显示
                     document.querySelector('.episode-range').style.display = 'flex';
-                    
+
                     // 移除换源模式的CSS类
                     const episodeGrid = document.querySelector('.episode-grid');
                     episodeGrid.classList.remove('sources-mode');
-                    
+
                     // 使用动态选集显示功能
                     if (currentEpisodes && currentEpisodes.length > 0) {
                         updateEpisodesDisplay(currentEpisodes, currentEpisodeIndex);
@@ -1639,6 +1897,391 @@
         document.querySelector('.theme-toggle').addEventListener('click', function () {
             document.body.style.filter = document.body.style.filter ? '' : 'invert(1) hue-rotate(180deg)';
             this.textContent = this.textContent === '🌙' ? '☀️' : '🌙';
+        });
+
+        // 网址输入框功能
+        const urlInput = document.getElementById('urlInput');
+        const urlBtn = document.getElementById('urlBtn');
+        const urlBtnText = document.getElementById('urlBtnText');
+
+        async function playDirectUrl(url) {
+            if (!url || !url.trim()) {
+                alert('请输入有效的视频地址');
+                return;
+            }
+
+            url = url.trim();
+            console.log('处理输入地址:', url);
+
+            // 更新按钮状态
+            urlBtn.classList.add('loading');
+            urlBtnText.textContent = '加载中...';
+
+            try {
+                // 检查是否为直接视频链接
+                if (isDirectVideoUrl(url)) {
+                    console.log('检测到直接视频链接');
+                    playVideoDirectly(url);
+                } else {
+                    console.log('检测到可能是播放列表，尝试获取内容');
+                    try {
+                        // 尝试直接获取URL内容
+                        let response, content;
+                        try {
+                            response = await fetch(url, {
+                                mode: 'cors',
+                                headers: {
+                                    'Accept': 'text/plain, application/x-mpegURL, */*'
+                                }
+                            });
+                            content = await response.text();
+                        } catch (corsError) {
+                            console.warn('直接访问受CORS限制，尝试通过代理:', corsError.message);
+                            // 如果CORS失败，尝试使用代理或提示用户
+                            throw new Error('无法访问该地址，可能存在跨域限制。请尝试：\n1. 使用支持CORS的播放列表地址\n2. 或直接输入视频流地址');
+                        }
+
+                        // 检查是否为M3U格式
+                        if (content.startsWith('#EXTM3U') || content.includes('#EXTINF')) {
+                            console.log('检测到M3U播放列表');
+                            parseM3UAndShowChannels(content);
+                        } else if (content.includes('http') && (content.includes('.m3u8') || content.includes('stream'))) {
+                            console.log('检测到可能的播放列表内容');
+                            parseM3UAndShowChannels(content);
+                        } else {
+                            // 如果不是M3U格式，尝试作为直接链接播放
+                            console.log('内容格式未知，尝试作为视频链接播放');
+                            playVideoDirectly(url);
+                        }
+                    } catch (fetchError) {
+                        if (fetchError.message.includes('跨域限制')) {
+                            throw fetchError;
+                        } else {
+                            // 如果获取内容失败，尝试直接播放
+                            console.log('获取内容失败，尝试直接播放:', fetchError.message);
+                            playVideoDirectly(url);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('处理地址失败:', error);
+                alert('处理失败: ' + error.message);
+            } finally {
+                // 恢复按钮状态
+                setTimeout(() => {
+                    urlBtn.classList.remove('loading');
+                    urlBtnText.textContent = '播放';
+                }, 1000);
+            }
+        }
+
+        function playVideoDirectly(url) {
+            try {
+                // 更新视频标题
+                videoTitle = '直链播放';
+                document.title = '直链播放 - KatelyaTV';
+
+                // 更新视频标题显示
+                const videoTitleElement = document.querySelector('.video-title h1');
+                if (videoTitleElement) {
+                    videoTitleElement.textContent = '直链播放';
+                }
+
+                // 更新面包屑
+                const breadcrumbElement = document.querySelector('.breadcrumb');
+                if (breadcrumbElement) {
+                    breadcrumbElement.innerHTML = '<a href="#">直链播放</a>';
+                }
+
+                // 使用播放器播放
+                if (art) {
+                    art.switchUrl(url);
+                } else {
+                    // 如果播放器未初始化，初始化播放器
+                    currentVideoUrl = url;
+                    initPlayer(url);
+                }
+
+                console.log('直链地址播放成功');
+            } catch (error) {
+                console.error('播放直链地址失败:', error);
+                alert('播放失败: ' + error.message);
+            }
+        }
+
+        function isDirectVideoUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                const pathname = urlObj.pathname.toLowerCase();
+
+                // 检查是否为支持的直接视频格式
+                return pathname.endsWith('.m3u8') ||
+                    pathname.endsWith('.mp4') ||
+                    pathname.endsWith('.flv') ||
+                    pathname.endsWith('.avi') ||
+                    pathname.endsWith('.mkv') ||
+                    pathname.endsWith('.mov') ||
+                    pathname.includes('m3u8');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function isValidVideoUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                // 只要是有效的HTTP/HTTPS URL就可以尝试处理
+                return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // 解析M3U播放列表
+        function parseM3UAndShowChannels(content) {
+            channelList = [];
+            const lines = content.split('\n');
+            let currentChannel = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                if (line.startsWith('#EXTINF:')) {
+                    // 解析频道信息
+                    currentChannel = parseEXTINF(line);
+                } else if (line && !line.startsWith('#') && currentChannel) {
+                    // 这是频道的URL
+                    currentChannel.url = line;
+                    channelList.push(currentChannel);
+                    currentChannel = null;
+                }
+            }
+
+            console.log(`解析到 ${channelList.length} 个频道`);
+
+            // 更新界面显示频道列表
+            showChannelList();
+        }
+
+        // 解析EXTINF行
+        function parseEXTINF(line) {
+            const channel = {
+                name: '',
+                logo: '',
+                group: '',
+                url: ''
+            };
+
+            // 提取tvg-name
+            const nameMatch = line.match(/tvg-name="([^"]*)"/);
+            if (nameMatch) {
+                channel.tvgName = nameMatch[1];
+            }
+
+            // 提取tvg-logo
+            const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+            if (logoMatch) {
+                channel.logo = logoMatch[1];
+            }
+
+            // 提取group-title
+            const groupMatch = line.match(/group-title="([^"]*)"/);
+            if (groupMatch) {
+                channel.group = groupMatch[1];
+            }
+
+            // 提取频道名称（逗号后面的部分）
+            const nameFromEnd = line.split(',').pop();
+            if (nameFromEnd) {
+                channel.name = nameFromEnd.trim();
+            }
+
+            // 如果没有name，使用tvg-name
+            if (!channel.name && channel.tvgName) {
+                channel.name = channel.tvgName;
+            }
+
+            return channel;
+        }
+
+        // 显示频道列表
+        function showChannelList() {
+            // 更新页面标题
+            videoTitle = 'IPTV频道列表';
+            document.title = 'IPTV频道列表 - KatelyaTV';
+
+            const videoTitleElement = document.querySelector('.video-title h1');
+            if (videoTitleElement) {
+                videoTitleElement.textContent = 'IPTV频道列表';
+            }
+
+            const breadcrumbElement = document.querySelector('.breadcrumb');
+            if (breadcrumbElement) {
+                breadcrumbElement.innerHTML = '<a href="#">IPTV频道列表</a>';
+            }
+
+            // 切换到选台模式
+            const episodeSelector = document.querySelector('.episode-selector');
+            if (episodeSelector) {
+                // 隐藏选集范围
+                const episodeRange = document.querySelector('.episode-range');
+                if (episodeRange) {
+                    episodeRange.style.display = 'none';
+                }
+
+                // 更新标签
+                const tabs = document.querySelectorAll('.tab');
+                tabs.forEach(tab => {
+                    tab.classList.remove('active');
+                    if (tab.textContent === '选集') {
+                        tab.textContent = '选台';
+                        tab.classList.add('active');
+                    }
+                });
+
+                // 显示频道列表
+                const episodeGrid = document.querySelector('.episode-grid');
+                if (episodeGrid) {
+                    episodeGrid.classList.add('sources-mode');
+                    episodeGrid.innerHTML = renderChannelList();
+                }
+            }
+        }
+
+        // 渲染频道列表HTML
+        function renderChannelList() {
+            if (channelList.length === 0) {
+                return `
+                    <div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #666;">
+                        <div style="margin-bottom: 10px;">📺 未找到频道</div>
+                        <div style="font-size: 14px; opacity: 0.7;">播放列表可能为空或格式不正确</div>
+                    </div>
+                `;
+            }
+
+            // 按分组整理频道
+            const groupedChannels = {};
+            channelList.forEach(channel => {
+                const group = channel.group || '其他频道';
+                if (!groupedChannels[group]) {
+                    groupedChannels[group] = [];
+                }
+                groupedChannels[group].push(channel);
+            });
+
+            let html = '';
+            Object.keys(groupedChannels).forEach(group => {
+                // 跳过更新时间组
+                if (group.includes('更新时间')) {
+                    return;
+                }
+
+                html += `<div class="channel-group-title">${group} (${groupedChannels[group].length})</div>`;
+
+                groupedChannels[group].forEach((channel, index) => {
+                    html += `
+                        <div class="channel-item" data-channel-url="${encodeURIComponent(channel.url)}" data-channel-name="${encodeURIComponent(channel.name)}">
+                            <div class="channel-info">
+                                ${channel.logo ? `<img src="${channel.logo}" class="channel-logo" onerror="this.style.display='none'">` : '<div class="channel-logo-placeholder">📺</div>'}
+                                <div class="channel-details">
+                                    <div class="channel-name">${channel.name}</div>
+                                </div>
+                            </div>
+                            <button class="channel-btn" data-channel-index="${groupedChannels[group].indexOf(channel)}">播放</button>
+                        </div>
+                    `;
+                });
+            });
+
+            // 绑定频道点击事件
+            setTimeout(() => bindChannelEvents(), 100);
+
+            return html;
+        }
+
+        // 缩短URL显示
+        function shortenUrl(url) {
+            if (url.length > 50) {
+                return url.substring(0, 30) + '...' + url.slice(-20);
+            }
+            return url;
+        }
+
+        // 绑定频道点击事件
+        function bindChannelEvents() {
+            document.querySelectorAll('.channel-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const channelItem = this.closest('.channel-item');
+                    const channelUrl = decodeURIComponent(channelItem.getAttribute('data-channel-url'));
+                    const channelName = decodeURIComponent(channelItem.getAttribute('data-channel-name'));
+
+                    playChannel(channelUrl, channelName);
+                });
+            });
+
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.addEventListener('click', function (e) {
+                    if (e.target.classList.contains('channel-btn')) return;
+
+                    const channelUrl = decodeURIComponent(this.getAttribute('data-channel-url'));
+                    const channelName = decodeURIComponent(this.getAttribute('data-channel-name'));
+
+                    playChannel(channelUrl, channelName);
+                });
+            });
+        }
+
+        // 播放频道
+        function playChannel(url, name) {
+            console.log('播放频道:', name, url);
+
+            try {
+                // 更新视频信息
+                videoTitle = name;
+                document.title = `${name} - KatelyaTV`;
+
+                const videoTitleElement = document.querySelector('.video-title h1');
+                if (videoTitleElement) {
+                    videoTitleElement.textContent = name;
+                }
+
+                const breadcrumbElement = document.querySelector('.breadcrumb');
+                if (breadcrumbElement) {
+                    breadcrumbElement.innerHTML = `<a href="#">IPTV</a> > ${name}`;
+                }
+
+                // 播放视频
+                if (art) {
+                    art.switchUrl(url);
+                } else {
+                    currentVideoUrl = url;
+                    initPlayer(url);
+                }
+
+                console.log('频道播放成功:', name);
+            } catch (error) {
+                console.error('播放频道失败:', error);
+                alert('播放失败: ' + error.message);
+            }
+        }
+
+        // 绑定网址输入框事件
+        urlBtn.addEventListener('click', function () {
+            const url = urlInput.value;
+            playDirectUrl(url);
+        });
+
+        // 支持回车键播放
+        urlInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const url = urlInput.value;
+                playDirectUrl(url);
+            }
+        });
+
+        // 输入框焦点事件
+        urlInput.addEventListener('focus', function () {
+            this.select(); // 选中全部文本
         });
 
         // 视频播放器点击事件

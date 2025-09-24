@@ -31,6 +31,10 @@ router.get('/detail', movieController.detail.bind(movieController));
  */
 router.get('/douban', movieController.douban.bind(movieController));
 
+router.get('/parse', movieController.parse.bind(movieController));
+
+router.get('/tvbox', movieController.tvbox.bind(movieController));
+
 
 export default {
   router
