@@ -1,6 +1,10 @@
 import express from "express";
+import cors from 'cors';
 import routes from "./router/index.js";
 const app = express();
+
+// 允许所有来源的跨域请求
+app.use(cors());
 
 // 添加日志中间件
 app.use((req, res, next) => {

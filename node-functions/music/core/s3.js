@@ -4,7 +4,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { readFile } from "fs/promises";
 
-import { Upload } from "@aws-sdk/lib-storage";
+// 移除未使用的 Upload 以避免引入 node-only 依赖
 
 // import {
 //     ProgressBar,

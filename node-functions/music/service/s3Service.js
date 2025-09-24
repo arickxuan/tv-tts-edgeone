@@ -1,7 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { ListBucketsCommand, PutObjectCommand, GetObjectCommand, ListObjectsV2Command,DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Upload } from "@aws-sdk/lib-storage";
+// 按需动态导入 Upload，避免在不使用时引入 node-only 依赖
 
 import { s3Tools } from "../core/s3.js";
 import { removeBracketContent } from "../core/utils/string.js";

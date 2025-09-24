@@ -21,9 +21,12 @@
 // export default app;
 
 import express from "express";
+import cors from 'cors';
 import { getDB } from "./supabase/db";
-import http from "http";
 const app = express();
+
+// 允许所有来源的跨域请求
+app.use(cors());
 
 // Express 路由（与方法一相同的 HTML）
 app.get('/', async (req, res) => {

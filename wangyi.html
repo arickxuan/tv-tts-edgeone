@@ -2233,6 +2233,7 @@
 
     <script>
         const API_BASE = 'https://music-api.gdstudio.xyz/api.php';
+        const API = 'https://mo.arick.top';
         let currentPlaylist = [];
         let currentIndex = -1;
         let currentLyrics = [];
@@ -2351,6 +2352,22 @@
             }
         }
 
+        //
+        async function searchMusiBy(keyword,source="netease") {
+            try {
+                const response = await fetch(`${API_BASE}?types=search&source=${source}&name=${encodeURIComponent(keyword)}&count=30`);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    console.log("searchMusiBy",data)
+                } else {
+                    return "error"
+                }
+            } catch (error) {
+                console.log("searchMusiBy",error)
+                return "error"
+            }
+        }
         // 播放歌曲
         async function playSong(index, playlist) {
             if (!playlist || index < 0 || index >= playlist.length) return;
@@ -2407,6 +2424,8 @@
                         });
                     }
                 } else {
+                    //TODO: 获取音乐链接失败，请尝试其他音源
+                    let re = await searchMusiBy()
                     showNotification('无法获取音乐链接，请尝试其他歌曲或更换音质', 'error');
                 }
             } catch (error) {
@@ -3023,7 +3042,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登录中...';
 
             try {
-                const response = await fetch('/supabase/login', {
+                const response = await fetch(API+'/supabase/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
