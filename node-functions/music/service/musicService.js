@@ -63,7 +63,7 @@ export class MusicService {
     } else if (from == "kugou") {
       const kugouResult = await kugou.search(key,page, type);
       return kugouResult
-    } else if (from == "wangyi") {
+    } else if (from == "netease") {
       const wangyiResult = await wangyi.search(key,page, type);
       return wangyiResult
     } else if (from == "migu") {

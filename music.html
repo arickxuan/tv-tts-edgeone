@@ -3449,10 +3449,10 @@
                         name: song.title || song.name,
                         artist: Array.isArray(song.singers) ? song.singers.join(' / ') : song.singers || '未知歌手',
                         album: song.album || '未知专辑',
-                        id: song.qq_id || song.wangyi_id || song.kugou_id || song.kuwo_id || song.id,
+                        id: song.qq_id || song.netease_id || song.kugou_id || song.kuwo_id || song.id,
                         pic_id: null,
                         lyric_id: null,
-                        source: song.qq_id ? 'tencent' : (song.wangyi_id ? 'netease' : (song.kugou_id ? 'kugou' : 'kuwo'))
+                        source: song.qq_id ? 'tencent' : (song.netease_id ? 'netease' : (song.kugou_id ? 'kugou' : 'kuwo'))
                     }));
 
                     currentPlaylistSongs = songs;

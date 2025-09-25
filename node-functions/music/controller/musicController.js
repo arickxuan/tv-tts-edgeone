@@ -164,7 +164,7 @@ class MusicController {
 
   //搜索下载
   async searchDownload(key, singers) {
-    let froms = ['kuwo', 'kugou', 'wangyi', 'qq']
+    let froms = ['kuwo', 'kugou', 'netease', 'qq']
     for (const from of froms) {
       const result = await this.MusicService.search(key, 1, 'music', from);
       // console.log("result", result.data.length,key,singers)
@@ -335,7 +335,7 @@ class MusicController {
             if (getCleanTitle(item.title) == getCleanTitle(song.title)) {
               if (song.singers.every(word => item.artist.includes(word))) {
                 // let id = togd ? song.mid : item.id;
-                let other_id = from == "wangyi" ? "kuwo_id" : "wangyi_id";
+                let other_id = from == "netease" ? "kuwo_id" : "netease_id";
                 let newSong = {
                   id: item.id,
                   [`${from}_id`]: item.id,
@@ -359,7 +359,7 @@ class MusicController {
           return {
             id: song.mid,
             kuwo_id: song.kuwo_id || "",
-            wangyi_id: song.wangyi_id || "",
+            netease_id: song.netease_id || "",
             qq_id: song.mid,
             title: song.title,
             name: song.name,
@@ -421,7 +421,7 @@ class MusicController {
 
       for (const song of response.data.songList) {
 
-        if (song.wangyi_id) {
+        if (song.netease_id) {
           arr.push(song);
           continue;
         }
@@ -459,7 +459,7 @@ class MusicController {
       if (song.singers.every(word => item.artist.includes(word))) {
         if (getCleanTitle(item.title) == getCleanTitle(song.name)) {
 
-          let other_id = from == "wangyi" ? "kuwo_id" : "wangyi_id";
+          let other_id = from == "netease" ? "kuwo_id" : "netease_id";
           let newSong = {
             id: item.id,
             [`${from}_id`]: item.id,

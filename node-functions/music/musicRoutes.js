@@ -28,6 +28,8 @@ router.get('/songlist/item', authMiddleware,userController.getSonglistItem.bind(
 router.put('/songlist', authMiddleware,userController.updateSonglist.bind(userController));
 router.post('/songlist/sync', authMiddleware,userController.syncSonglist.bind(userController));
 router.post('/songlist/import', authMiddleware,userController.importSonglist.bind(userController));
+router.post('/songlist/fill-info', authMiddleware,userController.fillSongInfo.bind(userController));
+router.post('/songlist/add', authMiddleware,userController.addToSonglist.bind(userController));
 
 
 export default router;
