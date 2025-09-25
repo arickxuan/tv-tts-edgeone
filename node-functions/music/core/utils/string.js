@@ -127,7 +127,7 @@ export function syncSongListByNetease(songList, sbArr,sid,uid) {
                 title: song.title,
                 name: cleanSongTitle,
                 album: song.album,
-                wangyi_id: song.wangyi_id,
+                netease_id: song.netease_id,
                 // singers: JSON.stringify(song.singers),
                 singers: song.singers,
             }

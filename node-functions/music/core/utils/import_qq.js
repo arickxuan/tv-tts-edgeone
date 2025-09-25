@@ -38,7 +38,7 @@ export async function getListByNetease( playlistId, isProxy=false) {
             singers: track.ar.map(a => a.name),
             album: track.al.name,
             id: track.id,
-            wangyi_id: track.id,
+            netease_id: track.id,
             pic_id: track.al.pic_id_str || track.al.pic_str || track.al.pic,
             lyric_id: track.id,
             source: 'netease'
@@ -51,7 +51,7 @@ export async function getListByNetease( playlistId, isProxy=false) {
             singers: track.ar.map(a => a.name),
             album: track.al.name,
             id: track.id,
-            wangyi_id: track.id,
+            netease_id: track.id,
             pic_id: track.al.pic_id_str || track.al.pic_str || track.al.pic,
             lyric_id: track.id,
             source: 'netease'
