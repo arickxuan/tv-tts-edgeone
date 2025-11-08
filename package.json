@@ -8,7 +8,8 @@
         "@aws-sdk/s3-request-presigner": "^3.894.0",
         "@neteaseapireborn/api": "^4.29.2",
         "@supabase/supabase-js": "^2.57.4",
-        "axios": "^1.12.2",
+        "axios": "^1.13.1",
+        "axios-cookiejar-support": "^6.0.4",
         "big-integer": "^1.6.52",
         "cheerio": "^1.1.2",
         "cors": "^2.8.5",
@@ -17,7 +18,9 @@
         "express": "^5.1.0",
         "he": "^1.2.0",
         "hls.js": "^1.6.12",
+        "iconv-lite": "^0.7.0",
         "node-rsa": "^1.1.1",
+        "tough-cookie": "^5.1.2",
         "ws": "^8.18.3"
     }
 }
