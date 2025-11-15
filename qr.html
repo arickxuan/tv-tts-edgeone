@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传和生成二维码</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm"></script>
+    <style>
+        .preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        #imagePreview {
+            max-width: 300px;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .section {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        hr {
+            margin: 30px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="section">
+        <h2>上传二维码图片并解析</h2>
+        <label for="fileInput">选择二维码图片:</label>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="preview-container">
+            <img id="imagePreview" alt="图片预览">
+        </div>
+        <br><br>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <p>解析结果:</p>
+        <pre id="result"></pre>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <h2>生成二维码</h2>
+        <label for="textInput">输入文本:</label>
+        <input type="text" id="textInput" placeholder="输入文本生成二维码" />
+        <button id="generateQRCode">生成二维码</button>
+        <br><br>
+        <div id="qrcode"></div>
+        <canvas id="canvas2"></canvas>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <h2>转码 otpauth-migration</h2>
+        <label for="migrationInput">输入 otpauth-migration 数据:</label>
+        <input type="text" id="migrationInput" placeholder="输入 otpauth-migration 数据" style="width: 500px;" />
+        <button id="convertMigration">转换</button>
+        <div id="migration"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const resultElement = document.getElementById('result');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const textInput = document.getElementById('textInput');
+        const generateQRCodeBtn = document.getElementById('generateQRCode');
+        const qrcodeDiv = document.getElementById('qrcode');
+        const canvas2 = document.getElementById('canvas2');
+        const migrationInput = document.getElementById('migrationInput');
+        const convertMigrationBtn = document.getElementById('convertMigration');
+        const migrationDiv = document.getElementById('migration');
+
+        // 处理文件选择并解析二维码
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                // 显示图片预览
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    
+                    // 处理二维码解析
+                    const img = new Image();
+                    img.onload = function () {
+                        // 设置canvas尺寸与图片一致
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        // 将图片绘制到canvas上
+                        ctx.drawImage(img, 0, 0);
+                        // 解析二维码
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, canvas.width, canvas.height);
+                        if (code) {
+                            resultElement.textContent = `二维码内容: ${code.data}`;
+                        } else {
+                            resultElement.textContent = "未能识别二维码";
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);  // 读取上传的图片文件
+            } else {
+                // 如果没有选择文件，隐藏预览
+                imagePreview.style.display = 'none';
+            }
+        });
+
+        // 生成二维码
+        generateQRCodeBtn.addEventListener('click', function () {
+            const text = textInput.value;
+            if (text) {
+                // 清空上一个二维码
+                qrcodeDiv.innerHTML = '';
+                QRCode.toCanvas(canvas2, text, function (error) {
+                    if (error) console.error(error)
+                    console.log('success!');
+                });
+            } else {
+                alert('请输入文本来生成二维码');
+            }
+        });
+
+        // 转换 otpauth-migration 数据
+        convertMigrationBtn.addEventListener('click', async function () {
+            const inputData = migrationInput.value;
+            if (inputData) {
+                try {
+                    // 动态导入 URI 模块
+                    const { URI } = await import('https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm');
+                    const OTPAuthURI = URI.toOTPAuthURIs(inputData);
+                    let html = '<ul>';
+                    OTPAuthURI.forEach(uri => {
+                        html += `<li>${uri}</li>`;
+                    });
+                    html += '</ul>';
+                    migrationDiv.innerHTML = html;
+                } catch (error) {
+                    migrationDiv.innerHTML = `转换出错: ${error.message}`;
+                }
+            } else {
+                alert('请输入 otpauth-migration 数据');
+            }
+        });
+    </script>
+</body>
+</html>
