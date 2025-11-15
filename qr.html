@@ -7,7 +7,6 @@
     <title>上传和生成二维码</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm"></script>
     <style>
         .preview-container {
             margin-top: 15px;
@@ -47,7 +46,7 @@
         <br><br>
         <canvas id="canvas" style="display: none;"></canvas>
         <p>解析结果:</p>
-        <pre id="result"></pre>
+        <pre id="qrcode-result"></pre>
     </div>
 
     <hr>
@@ -65,98 +64,120 @@
     <hr>
 
     <div class="section">
-        <h2>转码 otpauth-migration</h2>
-        <label for="migrationInput">输入 otpauth-migration 数据:</label>
-        <input type="text" id="migrationInput" placeholder="输入 otpauth-migration 数据" style="width: 500px;" />
-        <button id="convertMigration">转换</button>
-        <div id="migration"></div>
+        <h2>OTP Migration 解析器</h2>
+        <a href="https://authenticator-migration.vercel.app/">跳转</a>
+        <textarea id="migrationInput" rows="4" cols="80" placeholder="在此粘贴 otpauth-migration:// 链接..."></textarea>
+        <br>
+        <button id="convertMigration">解析迁移链接</button>
+        <div id="migration-result"></div>
     </div>
 
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const resultElement = document.getElementById('result');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const textInput = document.getElementById('textInput');
-        const generateQRCodeBtn = document.getElementById('generateQRCode');
-        const qrcodeDiv = document.getElementById('qrcode');
-        const canvas2 = document.getElementById('canvas2');
-        const migrationInput = document.getElementById('migrationInput');
-        const convertMigrationBtn = document.getElementById('convertMigration');
-        const migrationDiv = document.getElementById('migration');
+    <script type="importmap">
+  {
+    "imports": { "otpauth": "https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm" }
+    
+  }
+</script>
 
-        // 处理文件选择并解析二维码
-        fileInput.addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                // 显示图片预览
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    
-                    // 处理二维码解析
-                    const img = new Image();
-                    img.onload = function () {
-                        // 设置canvas尺寸与图片一致
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        // 将图片绘制到canvas上
-                        ctx.drawImage(img, 0, 0);
-                        // 解析二维码
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const code = jsQR(imageData.data, canvas.width, canvas.height);
-                        if (code) {
-                            resultElement.textContent = `二维码内容: ${code.data}`;
-                        } else {
-                            resultElement.textContent = "未能识别二维码";
-                        }
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);  // 读取上传的图片文件
-            } else {
-                // 如果没有选择文件，隐藏预览
-                imagePreview.style.display = 'none';
-            }
-        });
-
-        // 生成二维码
-        generateQRCodeBtn.addEventListener('click', function () {
-            const text = textInput.value;
-            if (text) {
-                // 清空上一个二维码
-                qrcodeDiv.innerHTML = '';
-                QRCode.toCanvas(canvas2, text, function (error) {
-                    if (error) console.error(error)
-                    console.log('success!');
+    <script type="module">
+        // 正确导入方式
+        // import { URI } from 'https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm';
+        // import { URI } from "otpauth";
+        // 使用示例
+        function parseMigrationURI() {
+            const migrationUri = document.getElementById('migrationInput').value;
+            try {
+                const otpAuthUris = otpauthMigration.URI.toOTPAuthURIs(migrationUri);
+                console.log("解析结果:", otpAuthUris);
+                
+                // 显示结果
+                const resultDiv = document.getElementById('migration-result');
+                resultDiv.innerHTML = '<h3>解析出的账户:</h3>';
+                otpAuthUris.forEach((uri, index) => {
+                    resultDiv.innerHTML += `<p>${index + 1}. ${uri}</p>`;
                 });
-            } else {
-                alert('请输入文本来生成二维码');
+            } catch (error) {
+                console.error("解析失败:", error);
+                document.getElementById('migration-result').innerHTML = `<p style="color: red;">错误: ${error.message}</p>`;
+            }
+        }
+        
+        // 暴露函数到全局，以便HTML按钮调用
+        window.parseMigrationURI = parseMigrationURI;
+        
+        // 等待 DOM 加载完成后添加事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const convertMigrationBtn = document.getElementById('convertMigration');
+            if (convertMigrationBtn) {
+                convertMigrationBtn.addEventListener('click', function() {
+                    window.parseMigrationURI();
+                });
             }
         });
+    </script>
 
-        // 转换 otpauth-migration 数据
-        convertMigrationBtn.addEventListener('click', async function () {
-            const inputData = migrationInput.value;
-            if (inputData) {
-                try {
-                    // 动态导入 URI 模块
-                    const { URI } = await import('https://cdn.jsdelivr.net/npm/otpauth-migration@1.0.0/+esm');
-                    const OTPAuthURI = URI.toOTPAuthURIs(inputData);
-                    let html = '<ul>';
-                    OTPAuthURI.forEach(uri => {
-                        html += `<li>${uri}</li>`;
-                    });
-                    html += '</ul>';
-                    migrationDiv.innerHTML = html;
-                } catch (error) {
-                    migrationDiv.innerHTML = `转换出错: ${error.message}`;
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const resultElement = document.getElementById('qrcode-result');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const textInput = document.getElementById('textInput');
+            const generateQRCodeBtn = document.getElementById('generateQRCode');
+            const qrcodeDiv = document.getElementById('qrcode');
+            const canvas2 = document.getElementById('canvas2');
+
+            // 处理文件选择并解析二维码
+            fileInput.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    // 显示图片预览
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                        
+                        // 处理二维码解析
+                        const img = new Image();
+                        img.onload = function () {
+                            // 设置canvas尺寸与图片一致
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            // 将图片绘制到canvas上
+                            ctx.drawImage(img, 0, 0);
+                            // 解析二维码
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const code = jsQR(imageData.data, canvas.width, canvas.height);
+                            if (code) {
+                                resultElement.textContent = `二维码内容: ${code.data}`;
+                            } else {
+                                resultElement.textContent = "未能识别二维码";
+                            }
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);  // 读取上传的图片文件
+                } else {
+                    // 如果没有选择文件，隐藏预览
+                    imagePreview.style.display = 'none';
                 }
-            } else {
-                alert('请输入 otpauth-migration 数据');
-            }
+            });
+
+            // 生成二维码
+            generateQRCodeBtn.addEventListener('click', function () {
+                const text = textInput.value;
+                if (text) {
+                    // 清空上一个二维码
+                    qrcodeDiv.innerHTML = '';
+                    QRCode.toCanvas(canvas2, text, function (error) {
+                        if (error) console.error(error)
+                        console.log('success!');
+                    });
+                } else {
+                    alert('请输入文本来生成二维码');
+                }
+            });
         });
     </script>
 </body>
