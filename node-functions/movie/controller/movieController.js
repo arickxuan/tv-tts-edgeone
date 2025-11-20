@@ -104,8 +104,8 @@ class MovieController {
         }
 
         try {
-            // 获取可用的API站点并并行搜索
-            const apiSites = await getAvailableApiSites();
+            // 获取可用的API站点并并行搜索（随机选取5个）
+            const apiSites = await getAvailableApiSites(false, 15);
             const searchPromises = apiSites.map(site => searchFromApi(site, query));
 
             const results = await Promise.all(searchPromises);
@@ -142,8 +142,8 @@ class MovieController {
         }
 
         try {
-            // 查找对应的API站点
-            const apiSites = await getAvailableApiSites();
+            // 查找对应的API站点（不进行随机选择）
+            const apiSites = await getAvailableApiSites(false, 0);
             const apiSite = apiSites.find(site => site.key === source);
 
             if (!apiSite) {
@@ -204,7 +204,7 @@ class MovieController {
                 quickSearch: 1, // 支持快速搜索
                 filterable: 1, // 支持分类筛选
                 ext: source.detail || '', // 详情页地址作为扩展参数
-                timeout: 30, // 30秒超时
+                timeout: 60, // 30秒超时
                 categories: [
                     "电影", "电视剧", "综艺", "动漫", "纪录片", "短剧"
                 ]

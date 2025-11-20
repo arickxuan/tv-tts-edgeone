@@ -88,9 +88,9 @@ export async function getCacheTime() {
     return config.SiteConfig.SiteInterfaceCacheTime || 7200;
 }
 
-export async function getAvailableApiSites(adult = false) {  //: Promise<ApiSite[]>
+export async function getAvailableApiSites(adult = false, randomSelect = 0) {  //: Promise<ApiSite[]>
     const config = await getConfig();
-    return config.SourceConfig.filter((s) => {
+    let sites = config.SourceConfig.filter((s) => {
         return (s.adult == adult || (s.adult == undefined && adult == false) && !s.disabled)
     }).map((s) => ({
         key: s.key,
@@ -99,10 +99,20 @@ export async function getAvailableApiSites(adult = false) {  //: Promise<ApiSite
         detail: s.detail,
         fullurl: s.fullurl,
     }));
+    
+    // 如果需要随机选择指定数量的站点
+    if (randomSelect > 0 && sites.length > randomSelect) {
+        // 随机打乱数组
+        for (let i = sites.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [sites[i], sites[j]] = [sites[j], sites[i]];
+        }
+        // 只返回前randomSelect个站点
+        sites = sites.slice(0, randomSelect);
+    }
+    
+    return sites;
 }
-
-
-
 
 export async function searchFromApi(
     apiSite,

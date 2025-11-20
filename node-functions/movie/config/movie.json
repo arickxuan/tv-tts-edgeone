@@ -44,46 +44,82 @@
             "name": "最大资源2",
             "fullurl": "https://api.yzzy-api.com/inc/apijson.php"
         },
-        "jkun": {
-            "api": "https://jkunzyapi.com",
-            "name": "jkun资源",
-            "adult": true
+        "hhzyapi": {
+            "api": "https://hhzyapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-豪华资源",
+            "detail": "https://hhzyapi.com",
+            "is_adult": false
         },
-        "ckzy": {
-            "api": "https://www.ckzy1.com",
-            "name": "CK资源",
-            "adult": true
+        "subocaiji": {
+            "api": "https://subocaiji.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-速博资源",
+            "detail": "",
+            "is_adult": false
         },
-        "bwzy": {
-            "api": "https://api.bwzym3u8.com",
-            "name": "百万资源",
-            "adult": true
+        "lziapi": {
+            "api": "https://cj.lziapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-量子资源",
+            "detail": "",
+            "is_adult": false
         },
-        "souav": {
-            "api": "https://api.souavzy.vip",
-            "name": "souav资源",
-            "adult": true
+        "jinyingzy": {
+            "api": "https://jinyingzy.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-金鹰点播",
+            "detail": "https://jinyingzy.com",
+            "is_adult": false
         },
-        "r155": {
-            "api": "https://155api.com",
-            "name": "155资源",
-            "adult": true
+        "jyzyapi": {
+            "api": "https://jyzyapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-金鹰资源",
+            "detail": "https://jyzyapi.com",
+            "is_adult": false
         },
-        "lsb": {
-            "api": "https://apilsbzy1.com",
-            "name": "lsb资源",
-            "adult": true
+        "sdzyapi": {
+            "api": "https://sdzyapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-闪电资源",
+            "detail": "https://sdzyapi.com",
+            "is_adult": false
         },
-        "huangcang": {
-            "api": "https://hsckzy.vip",
-            "name": "黄色仓库",
-            "adult": true,
-            "detail": "https://hsckzy.vip"
+        "ffzyapi": {
+            "api": "https://cj.ffzyapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-非凡资源",
+            "detail": "https://cj.ffzyapi.com",
+            "is_adult": false
         },
-        "yutu": {
-            "api": "https://yutuzy10.com",
-            "name": "玉兔资源",
-            "adult": true
+        "p2100": {
+            "api": "https://p2100.net/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-飘零资源",
+            "detail": "https://p2100.net",
+            "is_adult": false
+        },
+        "mozhuazy": {
+            "api": "https://mozhuazy.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-魔爪资源",
+            "detail": "https://mozhuazy.com",
+            "is_adult": false
+        },
+        "moduapi": {
+            "api": "https://caiji.moduapi.cc/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-魔都动漫",
+            "detail": "https://caiji.moduapi.cc",
+            "is_adult": false
+        },
+        "mdzyapi": {
+            "api": "https://www.mdzyapi.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "TV-魔都资源",
+            "detail": "https://www.mdzyapi.com",
+            "is_adult": false
         },
         "1080zyku": {
             "api": "https://api.1080zyku.com/inc/api_mac10.php",
@@ -91,13 +127,6 @@
             "name": "TV-1080资源",
             "detail": "https://api.1080zyku.com",
             "is_adult": false
-        },
-        "155api": {
-            "api": "https://155api.com/api.php/provide/vod",
-            "fullurl": true,
-            "name": "AV-155资源",
-            "detail": "https://155api.com",
-            "is_adult": true
         },
         "360zy": {
             "api": "https://360zy.com/api.php/provide/vod",
@@ -281,13 +310,6 @@
             "detail": "http://caiji.dyttzyapi.com",
             "is_adult": false
         },
-        "bwzyz": {
-            "api": "https://api.bwzyz.com/api.php/provide/vod",
-            "fullurl": true,
-            "name": "AV-百万资源",
-            "detail": "https://api.bwzyz.com",
-            "is_adult": true
-        },
         "apibdzy": {
             "api": "https://api.apibdzy.com/api.php/provide/vod",
             "fullurl": true,
@@ -344,7 +366,61 @@
             "detail": "https://dbzy.tv",
             "is_adult": false
         },
-        
+        "jkun": {
+            "api": "https://jkunzyapi.com",
+            "name": "jkun资源",
+            "adult": true
+        },
+        "ckzy": {
+            "api": "https://www.ckzy1.com",
+            "name": "CK资源",
+            "adult": true
+        },
+        "bwzy": {
+            "api": "https://api.bwzym3u8.com",
+            "name": "百万资源",
+            "adult": true
+        },
+        "souav": {
+            "api": "https://api.souavzy.vip",
+            "name": "souav资源",
+            "adult": true
+        },
+        "r155": {
+            "api": "https://155api.com",
+            "name": "155资源",
+            "adult": true
+        },
+        "lsb": {
+            "api": "https://apilsbzy1.com",
+            "name": "lsb资源",
+            "adult": true
+        },
+        "huangcang": {
+            "api": "https://hsckzy.vip",
+            "name": "黄色仓库",
+            "adult": true,
+            "detail": "https://hsckzy.vip"
+        },
+        "yutu": {
+            "api": "https://yutuzy10.com",
+            "name": "玉兔资源",
+            "adult": true
+        },
+        "155api": {
+            "api": "https://155api.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "AV-155资源",
+            "detail": "https://155api.com",
+            "is_adult": true
+        },
+        "bwzyz": {
+            "api": "https://api.bwzyz.com/api.php/provide/vod",
+            "fullurl": true,
+            "name": "AV-百万资源",
+            "detail": "https://api.bwzyz.com",
+            "is_adult": true
+        },
         "91md": {
             "api": "https://91md.me/api.php/provide/vod",
             "fullurl": true,
@@ -492,21 +568,18 @@
             "detail": "https://www.pgxdy.com",
             "is_adult": true
         },
-        
         "xingba111": {
             "api": "https://xingba111.com/api.php/provide/vod",
             "fullurl": true,
             "name": "性吧资源",
             "is_adult": true
         },
-        
         "hsckzy888": {
             "api": "https://hsckzy888.com/api.php/provide/vod",
             "fullurl": true,
             "name": "黄色资源啊啊",
             "is_adult": true
         },
-        
         "xxibaozyw": {
             "api": "https://www.xxibaozyw.com/api.php/provide/vod",
             "fullurl": true,
