@@ -1,0 +1,16 @@
+{
+  "USER": "your_account1#your_account2",
+  "PWD": "your_password1#your_password2",
+  "MIN_STEP": 18000,
+  "MAX_STEP": 25000,
+  "SLEEP_GAP": 5,
+  "USE_CONCURRENT": "False",
+  "PUSH_PLUS_TOKEN": "",
+  "PUSH_PLUS_HOUR": "8",
+  "PUSH_PLUS_MAX": 30,
+  "PUSH_WECHAT_WEBHOOK_KEY": "",
+  "TELEGRAM_BOT_TOKEN": "",
+  "TELEGRAM_CHAT_ID": ""
+}
+
+
