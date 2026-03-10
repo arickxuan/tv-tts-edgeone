@@ -154,7 +154,6 @@ class MovieController {
             // 查找对应的API站点（不进行随机选择）
             const apiSites = await getAvailableApiSites(false, 0);
             const apiSite = apiSites.find(site => site.key === source);
-
             if (!apiSite) {
                 return res.status(400).json({ error: '无效的API来源' });
             }

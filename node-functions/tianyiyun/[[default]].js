@@ -28,6 +28,8 @@ const app = express();
 
 // 允许所有来源的跨域请求
 app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Express 路由（与方法一相同的 HTML）
 app.get('/', async (req, res) => {

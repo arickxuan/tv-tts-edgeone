@@ -321,7 +321,7 @@ export async function getDetailFromApi(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-        throw new Error(`详情请求失败: ${response.status}`);
+        throw new Error(`详情请求失败-no detial: ${response.status}`);
     }
 
     const data = await response.json();

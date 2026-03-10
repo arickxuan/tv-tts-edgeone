@@ -4,13 +4,14 @@
  */
 
 import axios from 'axios';
-import qs  from 'querystring';
+import qs from 'querystring';
 
 // ================= 配置区域 =================
 // 在这里直接填写您的邮箱和密码(支持多账户）
 const ACCOUNTS = [
-    { email: process.env.IKUUUMAIL,// "example@gmail.com",
-         pwd:process.env.IKUUUPWD,
+    {
+        email: process.env.IKUUUMAIL,// "example@gmail.com",
+        pwd: process.env.IKUUUPWD,
     },
 ]
 
@@ -35,24 +36,24 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function runCheckin() {
+export async function runCheckin() {
     let logContent = "";
     console.log(`检测到 ${ACCOUNTS.length} 个账号，开始执行任务...\n`);
-    
+
     for (let i = 0; i < ACCOUNTS.length; i++) {
         const account = ACCOUNTS[i];
         const email = account.email;
         const password = account.pwd;
-        
+
         console.log(`=== 开始处理第 ${i + 1} 个账号: ${email} ===`);
-        
+
         // 创建axios实例，保持cookie
         const instance = axios.create({
             timeout: 10000,
             headers: getHeaders(),
             withCredentials: true
         });
-        
+
         try {
             // 1. 登录
             const loginData = qs.stringify({
@@ -60,29 +61,29 @@ async function runCheckin() {
                 passwd: password,
                 code: ''
             });
-            
+
             const loginResp = await instance.post(LOGIN_URL, loginData);
-            
+
             if (loginResp.data.ret !== 1) {
                 console.log(`登录失败: ${loginResp.data.msg || '未知错误'}`);
                 continue;
             }
-            
+
             console.log("登录成功，准备签到...");
-            
+
             // 2. 执行签到
             const checkinResp = await instance.post(CHECKIN_URL);
             const checkinMsg = checkinResp.data.msg || "无返回消息";
             console.log(`签到结果: ${checkinMsg}`);
-            
+
             // 3. 获取流量信息
             const userPageResp = await instance.get(USER_URL);
             const rawHtml = userPageResp.data;
-            
+
             // === 解码处理开始 ===
             let finalHtml = rawHtml;
             const originBodyMatch = rawHtml.match(/var originBody = "(.*?)";/);
-            
+
             if (originBodyMatch && originBodyMatch[1]) {
                 try {
                     // 提取Base64字符串
@@ -98,11 +99,11 @@ async function runCheckin() {
                 }
             }
             // === 解码处理结束 ===
-            
+
             // 4. 正则匹配流量
             let trafficInfo = "";
             const trafficMatch = finalHtml.match(/剩余流量[\s\S]*?<span class="counter">(.*?)<\/span>/);
-            
+
             if (trafficMatch && trafficMatch[1]) {
                 trafficInfo = trafficMatch[1] + " GB";
             } else {
@@ -118,22 +119,22 @@ async function runCheckin() {
                     trafficInfo = "提取失败 (HTML结构变化)";
                 }
             }
-            
+
             console.log(`当前流量: ${trafficInfo}`);
             logContent += `账号: ${email}\n状态: ${checkinMsg}\n剩余流量: ${trafficInfo}\n${"-".repeat(20)}\n`;
-            
+
         } catch (error) {
             console.log(`账号 ${email} 发生异常:`, error.message);
             if (error.response) {
                 console.log(`响应状态: ${error.response.status}`);
             }
         }
-        
+
         // 等待2秒再处理下一个账号
         await sleep(2000);
         console.log("\n");
     }
-    
+
     return logContent;
 }
 
@@ -146,11 +147,3 @@ async function main() {
         console.error("全局错误:", error);
     }
 }
-
-// 如果是直接运行此脚本，则执行主函数
-if (require.main === module) {
-    main();
-}
-
-// 导出函数供其他模块使用
-module.exports = { runCheckin };
