@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { ListBucketsCommand, ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { readFile } from "fs/promises";
 
@@ -225,7 +225,8 @@ export class s3Tools {
             Key: fileName,
             ResponseContentDisposition: 'attachment; filename="' + fileName + '"'
         });
-        const url = await getSignedUrl(s3Client, get_command, { expiresIn: 3600 });
+        let url = ""
+        //const url = await getSignedUrl(s3Client, get_command, { expiresIn: 3600 });
         console.log(url);
         return url;
     }
@@ -241,7 +242,7 @@ export class s3Tools {
                 Key: fileName
             });
 
-            const url = await getSignedUrl(this.s3Client, command, { expiresIn });
+            const url = "" //await getSignedUrl(this.s3Client, command, { expiresIn });
             return url;
         } catch (error) {
             console.error('生成预览URL时出错:', error);

@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { ListBucketsCommand, PutObjectCommand, GetObjectCommand, ListObjectsV2Command,DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+//import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // 按需动态导入 Upload，避免在不使用时引入 node-only 依赖
 
 import { s3Tools } from "../core/s3.js";
@@ -125,7 +125,7 @@ class S3Service {
         Key: fileName,
         ResponseContentDisposition: 'attachment; filename="' + fileName + '"'
       });
-      const url = await getSignedUrl(this.s3Client, get_command, { expiresIn: 3600 });
+      const url = "" //await getSignedUrl(this.s3Client, get_command, { expiresIn: 3600 });
       return url;
     } catch (error) {
       throw new Error(`获取签名URL失败: ${error.message}`);

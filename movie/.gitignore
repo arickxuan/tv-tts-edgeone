@@ -45,6 +45,8 @@ edgeone.json
 # Tencent Cloud EdgeOne
 .env
 .edgeone/*
+.edgeone/*/*
+.edgeone/edge-functions/*
 !.edgeone/project.json
 .tef_dist/*
   
