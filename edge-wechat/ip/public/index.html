@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IP 信息</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --ok: #3fb950;
+      --warn: #d29922;
+      --err: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    section h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+    .row {
+      display: grid;
+      gap: 0.75rem;
+    }
+    @media (min-width: 560px) {
+      .row.cols-2 { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .card .value {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      word-break: break-all;
+    }
+    .card-extra {
+      margin-top: 0.65rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .card-extra:empty { display: none; }
+    .status { font-size: 0.85rem; }
+    .status.loading { color: var(--warn); }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      width: 38%;
+    }
+    .detail-block { margin-top: 1.25rem; }
+    .detail-block:first-of-type { margin-top: 0.5rem; }
+    .detail-block h3 {
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>公网 IP 与归属信息</h1>
+    <p class="sub">IPv4 / IPv6 按列表顺序请求，单次超时则换下一镜像；详细信息由本机 <code>/api/ipinfo</code> 代理查询。</p>
+
+    <section>
+      <h2>出口地址（多源回退）</h2>
+      <div class="row cols-2">
+        <div class="card">
+          <div class="label">IPv4</div>
+          <div class="value" id="v4-ip">—</div>
+          <div class="card-extra" id="v4-extra"></div>
+          <div class="status loading" id="v4-status">请求中…</div>
+        </div>
+        <div class="card">
+          <div class="label">IPv6</div>
+          <div class="value" id="v6-ip">—</div>
+          <div class="card-extra" id="v6-extra"></div>
+          <div class="status loading" id="v6-status">请求中…</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="details-section">
+      <h2>IP 详细信息</h2>
+      <div id="details-root"></div>
+    </section>
+  </div>
+
+  <script>
+    const ENDPOINTS_V4 = [
+      "https://alisingv4.arick.top/ip",
+      "https://orausv4.arick.top/ip",
+      "https://oraus2v4.arick.top/ip",
+      "https://orajpv4.arick.top/ip",
+      "https://orajp2v4.arick.top/ip",
+    ];
+    const ENDPOINTS_V6 = [
+      "https://alisingv6.arick.top/ip",
+      "https://orausv6.arick.top/ip",
+      "https://oraus2v6.arick.top/ip",
+      "https://orajpv6.arick.top/ip",
+      "https://orajp2v6.arick.top/ip",
+    ];
+
+    /** 单次请求超时（毫秒），超时或失败则尝试下一地址 */
+    const FETCH_TIMEOUT_MS = 6000;
+
+    function setStatus(el, type, text) {
+      el.className = "status " + type;
+      el.textContent = text;
+    }
+
+    function trimStr(v) {
+      if (v == null) return "";
+      return String(v).trim();
+    }
+
+    /** 解析服务端返回的 JSON（含 Forwarde * 字段名） */
+    function normalizePayload(data) {
+      if (!data || typeof data !== "object") return null;
+      return {
+        ip: trimStr(data.ip),
+        ipv4: trimStr(data.ipv4),
+        ipv6: trimStr(data.ipv6),
+        forwardV4: trimStr(data["Forwarde ipv4"]),
+        forwardV6: trimStr(data["Forwarde ipv6"]),
+        forwardIps: trimStr(data["Forwarde ips"]),
+        host: trimStr(data.host),
+      };
+    }
+
+    function formatCardExtra(n) {
+      if (!n) return "";
+      const lines = [];
+      if (n.host) lines.push("host: " + n.host);
+      if (n.forwardV4) lines.push("Forwarde ipv4: " + n.forwardV4);
+      if (n.forwardV6) lines.push("Forwarde ipv6: " + n.forwardV6);
+      if (n.forwardIps) lines.push("Forwarde ips: " + n.forwardIps);
+      return lines.join("\n");
+    }
+
+    function shortUrl(u) {
+      try {
+        const x = new URL(u);
+        return x.host + x.pathname;
+      } catch {
+        return u;
+      }
+    }
+
+    async function fetchJsonWithTimeout(url, timeoutMs) {
+      const ac = new AbortController();
+      const timer = setTimeout(function () {
+        ac.abort();
+      }, timeoutMs);
+      try {
+        const r = await fetch(url, { cache: "no-store", signal: ac.signal });
+        if (!r.ok) {
+          clearTimeout(timer);
+          throw new Error("HTTP " + r.status);
+        }
+        const json = await r.json();
+        clearTimeout(timer);
+        return json;
+      } catch (e) {
+        clearTimeout(timer);
+        throw e;
+      }
+    }
+
+    /**
+     * 按顺序请求 urls，遇超时或非 2xx 则换下一个。
+     * @param {"v4"|"v6"} mode
+     * @returns {{ ok: boolean, norm: object|null, source: string|null, errors: Array<{url:string, reason:string}> }}
+     */
+    async function fetchIpChain(urls, timeoutMs, mode) {
+      const errors = [];
+      for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        try {
+          const data = await fetchJsonWithTimeout(url, timeoutMs);
+          const norm = normalizePayload(data);
+          if (!norm) {
+            errors.push({ url: url, reason: "无效 JSON 结构" });
+            continue;
+          }
+          const hasPrimary =
+            mode === "v4"
+              ? !!(norm.ipv4 || norm.ip)
+              : !!(norm.ipv6 || norm.ip);
+          if (!hasPrimary) {
+            errors.push({ url: url, reason: "响应无有效 IP" });
+            continue;
+          }
+          return { ok: true, norm: norm, source: url, errors: errors };
+        } catch (e) {
+          const reason = e && e.name === "AbortError" ? "超时" : (e.message || String(e));
+          errors.push({ url: url, reason: reason });
+        }
+      }
+      return { ok: false, norm: null, source: null, errors: errors };
+    }
+
+    /**
+     * @param {"v4"|"v6"} mode — 主展示字段
+     */
+    async function fetchMirrorGroup(urls, mode, valueEl, extraEl, statusEl, label) {
+      setStatus(statusEl, "loading", "请求中…");
+      valueEl.textContent = "—";
+      extraEl.textContent = "";
+
+      const res = await fetchIpChain(urls, FETCH_TIMEOUT_MS, mode);
+      if (!res.ok || !res.norm) {
+        valueEl.textContent = "—";
+        const last = res.errors.length ? res.errors[res.errors.length - 1].reason : "全部失败";
+        setStatus(statusEl, "err", (label || "失败") + ": " + last + "（已试 " + res.errors.length + " 个）");
+        return null;
+      }
+
+      const n = res.norm;
+      const primary =
+        mode === "v4"
+          ? (n.ipv4 || n.ip || "—")
+          : (n.ipv6 || n.ip || "—");
+      valueEl.textContent = primary || "—";
+      extraEl.textContent = formatCardExtra(n);
+
+      const src = shortUrl(res.source);
+      const tried = res.errors.length ? "，跳过 " + res.errors.length + " 个" : "";
+      setStatus(statusEl, "ok", "已获取 · " + src + tried);
+
+      return n;
+    }
+
+    function pickUniqueIPs(norm4, norm6) {
+      const out = [];
+      const seen = new Set();
+      function add(s) {
+        if (!s || seen.has(s)) return;
+        seen.add(s);
+        out.push(s);
+      }
+      if (norm4) {
+        add(norm4.ipv4);
+        add(norm4.ipv6);
+        add(norm4.ip);
+      }
+      if (norm6) {
+        add(norm6.ipv4);
+        add(norm6.ipv6);
+        add(norm6.ip);
+      }
+      return out;
+    }
+
+    async function fetchLocalIPInfo(ip) {
+      const q = new URLSearchParams({ ip });
+      const r = await fetch("/api/ipinfo?" + q.toString(), { cache: "no-store" });
+      const text = await r.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error("无效 JSON");
+      }
+      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+      return data;
+    }
+
+    function renderDetail(ip, payload) {
+      const block = document.createElement("div");
+      block.className = "detail-block";
+      const h3 = document.createElement("h3");
+      h3.textContent = ip;
+      block.appendChild(h3);
+
+      if (payload.success === false) {
+        const p = document.createElement("p");
+        p.className = "status err";
+        p.textContent = payload.message || "查询失败";
+        block.appendChild(p);
+        return block;
+      }
+
+      const rows = [
+        ["国家 / 地区", [payload.country, payload.region, payload.city].filter(Boolean).join(" · ")],
+        ["ISP", payload.connection && payload.connection.isp],
+        ["组织", payload.connection && payload.connection.org],
+        ["ASN", payload.connection && payload.connection.asn],
+        ["类型", payload.type],
+        ["经纬度", payload.latitude != null && payload.longitude != null ? payload.latitude + ", " + payload.longitude : ""],
+        ["时区", payload.timezone && payload.timezone.id],
+        ["货币", payload.currency && (payload.currency.name + " (" + payload.currency.code + ")")],
+      ].filter(([, v]) => v);
+
+      if (!rows.length) {
+        const p = document.createElement("p");
+        p.className = "status err";
+        p.textContent = "无可用字段";
+        block.appendChild(p);
+        return block;
+      }
+
+      const table = document.createElement("table");
+      for (const [k, v] of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<th>" + escapeHtml(k) + "</th><td>" + escapeHtml(String(v)) + "</td>";
+        table.appendChild(tr);
+      }
+      block.appendChild(table);
+      return block;
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    (async function main() {
+      const v4Status = document.getElementById("v4-status");
+      const v6Status = document.getElementById("v6-status");
+      const v4Val = document.getElementById("v4-ip");
+      const v6Val = document.getElementById("v6-ip");
+      const v4Extra = document.getElementById("v4-extra");
+      const v6Extra = document.getElementById("v6-extra");
+      const root = document.getElementById("details-root");
+
+      const [norm4, norm6] = await Promise.all([
+        fetchMirrorGroup(ENDPOINTS_V4, "v4", v4Val, v4Extra, v4Status, "IPv4"),
+        fetchMirrorGroup(ENDPOINTS_V6, "v6", v6Val, v6Extra, v6Status, "IPv6"),
+      ]);
+
+      const ips = pickUniqueIPs(norm4, norm6);
+      if (!ips.length) {
+        root.innerHTML = "<p class=\"status err\">未能解析出任何 IP，无法查询详情。</p>";
+        return;
+      }
+
+      root.innerHTML = "";
+      for (const ip of ips) {
+        const loading = document.createElement("p");
+        loading.className = "status loading";
+        loading.textContent = "正在查询 " + ip + " …";
+        root.appendChild(loading);
+        try {
+          const info = await fetchLocalIPInfo(ip);
+          root.removeChild(loading);
+          root.appendChild(renderDetail(ip, info));
+        } catch (e) {
+          root.removeChild(loading);
+          const err = document.createElement("div");
+          err.className = "detail-block";
+          err.innerHTML = "<h3>" + escapeHtml(ip) + "</h3><p class=\"status err\">" + escapeHtml(e.message || String(e)) + "</p>";
+          root.appendChild(err);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

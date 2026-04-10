@@ -7,11 +7,13 @@ import express from 'express';
 import cors from 'cors';
 import { addAccount, getAllAccounts } from './config/index.js';
 import { registerRoutes } from './routes/index.js';
-
+//const requestIp = require('request-ip');
+import requestIp from 'request-ip';
 const app = express();
 
 // 允许所有来源的跨域请求
 app.use(cors());
+app.use(requestIp.mw());
 
 // 支持多种内容类型
 app.use(express.json()); // 处理 application/json
@@ -52,6 +54,12 @@ app.get('/', (req, res) => {
             "示例：/default/recive 或 /recive"
         ]
     });
+});
+
+app.get('/ip', (req, res) => {
+    const ip = req.ip;
+    const ip2 = req.clientIp;
+    res.json({ ip, clientIp:ip2 });
 });
 
 // 错误处理中间件
