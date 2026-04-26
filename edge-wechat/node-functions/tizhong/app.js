@@ -7,6 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
+import { readFileSync } from 'fs';
+
 dotenv.config();
 const app = express();
 
@@ -252,7 +254,8 @@ app.get('/api/weights', async (req, res) => {
 
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
-    res.sendFile(path.join( '../../public/tizhong', 'index.html'));
+    const indexHtml = readFileSync(path.join( '../../public/tizhong', 'index.html'), 'utf8');
+    res.send(indexHtml);
 });
 
 app.get('/ping', (req, res) => {
