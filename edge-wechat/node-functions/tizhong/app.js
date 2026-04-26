@@ -295,7 +295,7 @@ function getAllFiles(dir) {
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
     try {
-        const indexHtml = readFileSync(path.join('../../../public/tizhong', 'index.html'), 'utf8');
+        const indexHtml = readFileSync(path.join('../../public/tizhong', 'index.html'), 'utf8');
         res.setHeader('Content-Type', 'text/html');
         res.status(200).send(indexHtml);
     } catch (error) {
