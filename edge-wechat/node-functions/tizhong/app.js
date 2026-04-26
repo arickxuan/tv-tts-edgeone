@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-import { readFileSync,readdirSync,statSync } from 'fs';
+import { readFileSync, readdirSync, statSync } from 'fs';
 
 dotenv.config();
 const app = express();
@@ -265,27 +265,36 @@ function getAllFiles(dir) {
     };
 
     try {
-        const items = readdirSync(dir);
+        const items = fs.readdirSync(dir);
 
         for (const item of items) {
             const fullPath = path.join(dir, item);
-            const stat = statSync(fullPath);
 
-            if (stat.isDirectory()) {
-                // 如果是目录，递归处理
-                result.children.push(getAllFiles(fullPath));
-            } else {
-                // 如果是文件，添加到文件列表
-                result.files.push({
-                    name: item,
-                    path: fullPath,
-                    size: stat.size,
-                    modifiedTime: stat.mtime
-                });
+            try {
+                const stat = fs.statSync(fullPath);
+
+                if (stat.isDirectory()) {
+                    // 如果是目录，递归处理（即使子目录失败也继续）
+                    result.children.push(getAllFiles(fullPath));
+                } else {
+                    // 如果是文件，添加到文件列表
+                    result.files.push({
+                        name: item,
+                        path: fullPath,
+                        size: stat.size,
+                        modifiedTime: stat.mtime
+                    });
+                }
+            } catch (err) {
+                // 单个文件或目录读取失败，跳过该项
+                console.error(`跳过 ${fullPath}: ${err.message}`);
+                continue;
             }
         }
     } catch (err) {
-        console.error(`读取目录 ${dir} 失败:`, err.message);
+        // 整个目录读取失败，返回空结果
+        //console.error(`跳过目录 ${dir}: ${err.message}`);
+        return { path: dir, files: [], children: [], error: err.message };
     }
 
     return result;
@@ -302,7 +311,7 @@ app.get('/', (req, res) => {
         const fileStructure = getAllFiles('../../../')
         console.log(fileStructure);
         return res.status(200).json(fileStructure);
-    
+
     }
 });
 
