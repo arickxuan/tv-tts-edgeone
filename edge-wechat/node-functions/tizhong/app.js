@@ -308,7 +308,7 @@ app.get('/', (req, res) => {
         const htmlPath = path.join('public', 'tizhong', 'index.html');
         if (!existsSync(htmlPath)) {
             console.error(`File not found: ${htmlPath}`);
-            const fileStructure = getAllFiles('../../../')
+            const fileStructure = getAllFiles('../')
             console.log(fileStructure);
             return res.status(200).json(fileStructure);
         }
