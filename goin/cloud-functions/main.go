@@ -3,6 +3,7 @@ package main
 import (
 	"goin/router"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,5 +18,9 @@ func NewApp() *gin.Engine {
 }
 
 func main() {
-	NewApp().Run(":9000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	NewApp().Run(":" + port)
 }
