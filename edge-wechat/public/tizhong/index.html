@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>体重记录 - 同步到飞书</title>
-    <link rel="stylesheet" href="./public/tizhong/css/style.css">
+    <link rel="stylesheet" href="/public/tizhong/css/style.css">
 </head>
 <body>
     <div class="container">
@@ -82,7 +82,7 @@
             messageDiv.textContent = '';
             
             try {
-                const response = await fetch('tizhong/api/weight', {
+                const response = await fetch('/tizhong/api/weight', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -119,7 +119,7 @@
             recordsList.innerHTML = '<p class="loading">⏳ 加载中...</p>';
             
             try {
-                const response = await fetch('tizhong/api/weights');
+                const response = await fetch('/tizhong/api/weights');
                 const result = await response.json();
                 
                 if (result.success && result.data) {
