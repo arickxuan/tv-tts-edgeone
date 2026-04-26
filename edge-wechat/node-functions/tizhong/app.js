@@ -265,13 +265,13 @@ function getAllFiles(dir) {
     };
 
     try {
-        const items = fs.readdirSync(dir);
+        const items = readdirSync(dir);
 
         for (const item of items) {
             const fullPath = path.join(dir, item);
 
             try {
-                const stat = fs.statSync(fullPath);
+                const stat = statSync(fullPath);
 
                 if (stat.isDirectory()) {
                     // 如果是目录，递归处理（即使子目录失败也继续）
