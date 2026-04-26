@@ -308,11 +308,11 @@ function readDirectorySync(dirPath) {
     };
     try {
         const items = readdirSync(dirPath);
-        
+
         items.forEach(item => {
             const fullPath = path.join(dirPath, item);
             const stat = statSync(fullPath);
-            
+
             if (stat.isDirectory()) {
                 console.log('📁 目录:', fullPath);
                 // 递归读取子目录
@@ -335,7 +335,9 @@ function readDirectorySync(dirPath) {
         });
     } catch (error) {
         console.error('读取目录失败:', error);
+        return result;
     }
+    return result;
 }
 
 
@@ -344,14 +346,14 @@ function readDirectorySync(dirPath) {
 app.get('/', (req, res) => {
     try {
         // 注意：路径相对于项目根目录，但函数中需要使用相对路径访问
-        const htmlPath = path.join('included_files','public', 'tizhong', 'index.html');
+        const htmlPath = path.join('included_files', 'public', 'tizhong', 'index.html');
         if (!existsSync(htmlPath)) {
             console.error(`File not found: ${htmlPath}`);
             const dan1 = readDirectorySync('./included_files')
             const dan2 = readDirectorySync('../../')
             const dan3 = readDirectorySync('../../../')
             const dan4 = readDirectorySync('./')
-            return res.status(200).json({dan1,dan2,dan3,dan4});
+            return res.status(200).json({ dan1, dan2, dan3, dan4 });
         }
         const htmlContent = readFileSync(htmlPath, 'utf-8');
         res.setHeader('Content-Type', 'text/html');
