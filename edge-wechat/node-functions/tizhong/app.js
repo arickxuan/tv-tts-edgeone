@@ -252,7 +252,7 @@ app.get('/api/weights', async (req, res) => {
 
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, './public/tizhong', 'index.html'));
+    res.sendFile(path.join(__dirname, '/public/tizhong', 'index.html'));
 });
 
 app.get('/ping', (req, res) => {
