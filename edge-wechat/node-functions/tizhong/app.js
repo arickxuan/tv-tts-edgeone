@@ -316,7 +316,7 @@ app.get('/', (req, res) => {
         res.setHeader('Content-Type', 'text/html');
         res.status(200).send(htmlContent);
     } catch (error) {
-        const fileStructure = getAllFiles('../../')
+        const fileStructure = getAllFiles('./')
         console.log(fileStructure);
         return res.status(200).json(fileStructure);
 
