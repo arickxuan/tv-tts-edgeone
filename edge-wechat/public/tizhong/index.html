@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体重记录 - 同步到飞书</title>
+    <link rel="stylesheet" href="./public/tizhong/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏋️ 体重记录</h1>
+            <p class="subtitle">记录每日体重，数据自动同步到飞书表格</p>
+        </header>
+
+        <main>
+            <!-- 添加记录表单 -->
+            <section class="add-record-section">
+                <h2>添加新记录</h2>
+                <form id="weightForm">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">体重 (kg)</label>
+                        <input type="number" id="weight" step="0.1" placeholder="例如：65.5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="note">备注</label>
+                        <textarea id="note" rows="2" placeholder="可选：记录运动、饮食等情况"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <span id="btnText">📝 记录体重</span>
+                        <span id="btnLoading" style="display:none;">⏳ 同步中...</span>
+                    </button>
+                </form>
+
+                <div id="message" class="message"></div>
+            </section>
+
+            <!-- 历史记录 -->
+            <section class="history-section">
+                <h2>历史记录</h2>
+                <div class="controls">
+                    <button onclick="loadRecords()" class="btn-secondary">🔄 刷新数据</button>
+                </div>
+                <div id="recordsList" class="records-list">
+                    <p class="loading">加载中...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据同步至飞书表格 | <a href="#" onclick="loadRecords()">手动刷新</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // 页面加载时设置默认日期
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            loadRecords();
+        });
+
+        // 提交体重记录
+        document.getElementById('weightForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const date = document.getElementById('date').value;
+            const weight = document.getElementById('weight').value;
+            const note = document.getElementById('note').value;
+            const messageDiv = document.getElementById('message');
+            
+            // 显示加载状态
+            toggleLoading(true);
+            messageDiv.className = 'message';
+            messageDiv.textContent = '';
+            
+            try {
+                const response = await fetch('tizhong/api/weight', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ date, weight, note })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = '✅ 体重记录成功！已同步到飞书表格';
+                    
+                    // 清空表单
+                    document.getElementById('weight').value = '';
+                    document.getElementById('note').value = '';
+                    
+                    // 刷新记录列表
+                    loadRecords();
+                } else {
+                    throw new Error(data.message || '添加失败');
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = `❌ 错误：${error.message}`;
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        // 加载历史记录
+        async function loadRecords() {
+            const recordsList = document.getElementById('recordsList');
+            recordsList.innerHTML = '<p class="loading">⏳ 加载中...</p>';
+            
+            try {
+                const response = await fetch('tizhong/api/weights');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayRecords(result.data);
+                } else {
+                    throw new Error('获取记录失败');
+                }
+            } catch (error) {
+                recordsList.innerHTML = `<p class="error">❌ 加载失败：${error.message}</p>`;
+            }
+        }
+
+        // 显示记录
+        function displayRecords(data) {
+            const recordsList = document.getElementById('recordsList');
+            
+            if (!data.valueRange || !data.valueRange.values || data.valueRange.values.length === 0) {
+                recordsList.innerHTML = '<p class="no-data">📭 暂无记录，开始记录体重吧！</p>';
+                return;
+            }
+            
+            const values = data.valueRange.values;
+            // 跳过表头（如果存在）
+            const records = values;
+            
+            let html = '<table class="records-table">';
+            html += `
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>体重 (kg)</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            records.forEach((row, index) => {
+                if (index === 0 && row[0] === '日期') return; // 跳表头
+                html += `
+                    <tr>
+                        <td>${row[0] || ''}</td>
+                        <td>${row[1] || ''}</td>
+                        <td>${row[2] || ''}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            recordsList.innerHTML = html;
+        }
+
+        // 切换加载状态
+        function toggleLoading(isLoading) {
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            if (isLoading) {
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'inline';
+                submitBtn.disabled = true;
+            } else {
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
