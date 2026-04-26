@@ -6,11 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func apiRouter(router *gin.Engine) *gin.RouterGroup {
+func apiRouter(router *gin.RouterGroup) {
 	v1 := router.Group("/api")
 	v1.GET("/v1/ping", pingHandler)
 
-	return v1
 }
 
 func pingHandler(c *gin.Context) {
