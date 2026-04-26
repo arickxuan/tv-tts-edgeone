@@ -1,6 +1,7 @@
 {
     "cloudFunctions": {
         "nodejs": {
+            "maxDuration": 120,
             "includeFiles": [
                 "public/**",
                 "assets2/**/*.json",

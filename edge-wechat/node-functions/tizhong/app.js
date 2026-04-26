@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 
 dotenv.config();
 const app = express();
@@ -304,11 +304,19 @@ function getAllFiles(dir) {
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
     try {
-        const indexHtml = readFileSync(path.join(process.cwd(),'public/tizhong', 'index.html'), 'utf8');
+        // 注意：路径相对于项目根目录，但函数中需要使用相对路径访问
+        const htmlPath = path.join('public', 'tizhong', 'index.html');
+        if (!existsSync(htmlPath)) {
+            console.error(`File not found: ${htmlPath}`);
+            const fileStructure = getAllFiles('../../../')
+            console.log(fileStructure);
+            return res.status(200).json(fileStructure);
+        }
+        const htmlContent = readFileSync(htmlPath, 'utf-8');
         res.setHeader('Content-Type', 'text/html');
-        res.status(200).send(indexHtml);
+        res.status(200).send(htmlContent);
     } catch (error) {
-        const fileStructure = getAllFiles('../../../')
+        const fileStructure = getAllFiles('../../')
         console.log(fileStructure);
         return res.status(200).json(fileStructure);
 
