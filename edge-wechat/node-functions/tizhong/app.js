@@ -344,10 +344,10 @@ function readDirectorySync(dirPath) {
 app.get('/', (req, res) => {
     try {
         // 注意：路径相对于项目根目录，但函数中需要使用相对路径访问
-        const htmlPath = path.join('public', 'tizhong', 'index.html');
+        const htmlPath = path.join('included_files','public', 'tizhong', 'index.html');
         if (!existsSync(htmlPath)) {
             console.error(`File not found: ${htmlPath}`);
-            const dan1 = readDirectorySync('../')
+            const dan1 = readDirectorySync('./included_files')
             const dan2 = readDirectorySync('../../')
             const dan3 = readDirectorySync('../../../')
             const dan4 = readDirectorySync('./')
