@@ -350,7 +350,7 @@ app.get('/', (req, res) => {
             const dan1 = readDirectorySync('../')
             const dan2 = readDirectorySync('../../')
             const dan3 = readDirectorySync('../../../')
-            const dan4 = readDirectorySync('../../../../')
+            const dan4 = readDirectorySync('./')
             return res.status(200).json({dan1,dan2,dan3,dan4});
         }
         const htmlContent = readFileSync(htmlPath, 'utf-8');
