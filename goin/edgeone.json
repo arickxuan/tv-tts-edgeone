@@ -1,0 +1,15 @@
+{
+    "cloudFunctions": {
+        "go": {
+            "maxDuration": 120,
+            "includeFiles": [
+                "assets/**",
+                "assets2/**/*.json", 
+                "public/font-example.ttf", 
+                "public/**", 
+                "!assets/**/*.tmp", 
+                "assets/images/**/*.{png,jpg,jpeg,gif,webp}"
+            ]
+        }
+    }
+}
