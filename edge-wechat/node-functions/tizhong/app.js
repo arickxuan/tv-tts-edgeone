@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-import { readFileSync } from 'fs';
+import { readFileSync,readdirSync,statSync } from 'fs';
 
 dotenv.config();
 const app = express();
@@ -252,9 +252,54 @@ app.get('/api/weights', async (req, res) => {
 });
 
 
+/**
+ * 递归获取目录下所有文件路径
+ * @param {string} dir 目录路径
+ * @returns {object} 包含目录结构和文件列表的对象
+ */
+function getAllFiles(dir) {
+    const result = {
+        path: dir,
+        files: [],
+        children: []
+    };
+
+    try {
+        const items = readdirSync(dir);
+
+        for (const item of items) {
+            const fullPath = path.join(dir, item);
+            const stat = statSync(fullPath);
+
+            if (stat.isDirectory()) {
+                // 如果是目录，递归处理
+                result.children.push(getAllFiles(fullPath));
+            } else {
+                // 如果是文件，添加到文件列表
+                result.files.push({
+                    name: item,
+                    path: fullPath,
+                    size: stat.size,
+                    modifiedTime: stat.mtime
+                });
+            }
+        }
+    } catch (err) {
+        console.error(`读取目录 ${dir} 失败:`, err.message);
+    }
+
+    return result;
+}
+
+
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
-    const indexHtml = readFileSync(path.join( '../public/tizhong', 'index.html'), 'utf8');
+    const indexHtml = readFileSync(path.join('../../../public/tizhong', 'index.html'), 'utf8');
+    if (!indexHtml) {
+        const targetDir = path.resolve(__dirname, '../../../');
+        const fileStructure = getAllFiles(targetDir)
+        return res.status(200).json(fileStructure);
+    }
     res.setHeader('Content-Type', 'text/html');
     res.status(200).send(indexHtml);
 });
