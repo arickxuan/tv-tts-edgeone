@@ -1,0 +1,14 @@
+{
+    "cloudFunctions": {
+        "nodejs": {
+            "includeFiles": [
+                "public/**",
+                "assets2/**/*.json",
+                "assets/font-example.ttf",
+                "assets/**",
+                "!assets/**/*.tmp",
+                "assets/images/**/*.{png,jpg,jpeg,gif,webp}"
+            ]
+        }
+    }
+}
