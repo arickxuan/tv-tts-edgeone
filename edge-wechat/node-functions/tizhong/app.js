@@ -299,8 +299,8 @@ app.get('/', (req, res) => {
         res.setHeader('Content-Type', 'text/html');
         res.status(200).send(indexHtml);
     } catch (error) {
-        const targetDir = path.resolve(__dirname, '../../');
-        const fileStructure = getAllFiles(targetDir)
+        const fileStructure = getAllFiles('../../../')
+        console.log(fileStructure);
         return res.status(200).json(fileStructure);
     
     }
