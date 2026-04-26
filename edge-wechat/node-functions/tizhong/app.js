@@ -300,6 +300,45 @@ function getAllFiles(dir) {
     return result;
 }
 
+function readDirectorySync(dirPath) {
+    const result = {
+        path: dirPath,
+        files: [],
+        directories: []
+    };
+    try {
+        const items = readdirSync(dirPath);
+        
+        items.forEach(item => {
+            const fullPath = path.join(dirPath, item);
+            const stat = statSync(fullPath);
+            
+            if (stat.isDirectory()) {
+                console.log('📁 目录:', fullPath);
+                // 递归读取子目录
+                //readDirectorySync(fullPath);
+                result.directories.push({
+                    name: item,
+                    path: fullPath,
+                    size: stat.size,
+                    modifiedTime: stat.mtime
+                });
+            } else if (stat.isFile()) {
+                console.log('📄 文件:', fullPath);
+                result.files.push({
+                    name: item,
+                    path: fullPath,
+                    size: stat.size,
+                    modifiedTime: stat.mtime
+                });
+            }
+        });
+    } catch (error) {
+        console.error('读取目录失败:', error);
+    }
+}
+
+
 
 // 路由：主页 - 现在 __dirname 可以正常使用了
 app.get('/', (req, res) => {
@@ -308,9 +347,11 @@ app.get('/', (req, res) => {
         const htmlPath = path.join('public', 'tizhong', 'index.html');
         if (!existsSync(htmlPath)) {
             console.error(`File not found: ${htmlPath}`);
-            const fileStructure = getAllFiles('../')
-            console.log(fileStructure);
-            return res.status(200).json(fileStructure);
+            const dan1 = readDirectorySync('../')
+            const dan2 = readDirectorySync('../../')
+            const dan3 = readDirectorySync('../../../')
+            const dan4 = readDirectorySync('../../../../')
+            return res.status(200).json({dan1,dan2,dan3,dan4});
         }
         const htmlContent = readFileSync(htmlPath, 'utf-8');
         res.setHeader('Content-Type', 'text/html');
