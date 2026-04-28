@@ -32,7 +32,9 @@ const FEISHU_CONFIG = {
     appId: process.env.FEISHU_APP_ID,
     appSecret: process.env.FEISHU_APP_SECRET,
     spreadsheetToken: process.env.FEISHU_SPREADSHEET_TOKEN,
-    sheetId: process.env.FEISHU_SHEET_ID
+    sheetId: process.env.FEISHU_SHEET_ID,
+    smsSpreadsheetToken: process.env.FEISHU_SMS_SPREADSHEET_TOKEN,
+    smsSheetId: process.env.FEISHU_SMS_SHEET_ID
 };
 
 // 存储 access_token
@@ -127,13 +129,15 @@ function getFeishuErrorMessage(code) {
 // 查询飞书表格记录
 async function getRecordsFromFeishu(source = 'tizhong',pageSize = 100) {
     try {
+        let spreadsheetToken = '';
+        let sheetId = '';
         const token = await getTenantAccessToken();
         if(source === 'tizhong') {
             spreadsheetToken = FEISHU_CONFIG.spreadsheetToken;
             sheetId = FEISHU_CONFIG.sheetId;
         } else if(source === 'sms') {
-            spreadsheetToken = FEISHU_SMS_SPREADSHEET_TOKEN;
-            sheetId = FEISHU_SMS_SHEET_ID;
+            spreadsheetToken = FEISHU_CONFIG.smsSpreadsheetToken;
+            sheetId = FEISHU_CONFIG.smsSheetId;
         }
 
         const response = await axios.get(
@@ -259,6 +263,15 @@ app.get('/api/weights', async (req, res) => {
 });
 
 app.get('/api/sms/records', async (req, res) => {
+    const X_ADMIN_TOKEN = req.headers["x-admin-token"] || req.headers["X-ADMIN-TOKEN"];
+    
+    console.log(X_ADMIN_TOKEN, process.env.X_ADMIN_TOKEN);
+    if(X_ADMIN_TOKEN !== process.env.X_ADMIN_TOKEN) {
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthorized'
+        });
+    }
     try {
         const result = await getRecordsFromFeishu("sms");
         res.json({
@@ -370,6 +383,29 @@ app.get('/', (req, res) => {
     try {
         // 注意：路径相对于项目根目录，但函数中需要使用相对路径访问
         const htmlPath = path.join('included_files', 'public', 'tizhong', 'index.html');
+        if (!existsSync(htmlPath)) {
+            console.error(`File not found: ${htmlPath}`);
+            const dan1 = readDirectorySync('./included_files')
+            const dan2 = readDirectorySync('../../')
+            const dan3 = readDirectorySync('../../../')
+            const dan4 = readDirectorySync('./')
+            return res.status(200).json({ dan1, dan2, dan3, dan4 });
+        }
+        const htmlContent = readFileSync(htmlPath, 'utf-8');
+        res.setHeader('Content-Type', 'text/html');
+        res.status(200).send(htmlContent);
+    } catch (error) {
+        const fileStructure = getAllFiles('./')
+        console.log(fileStructure);
+        return res.status(200).json(fileStructure);
+
+    }
+});
+
+app.get('/sms', (req, res) => {
+    try {
+        // 注意：路径相对于项目根目录，但函数中需要使用相对路径访问 // 'included_files'
+        const htmlPath = path.join( 'included_files','public', 'tizhong', 'sms.html');
         if (!existsSync(htmlPath)) {
             console.error(`File not found: ${htmlPath}`);
             const dan1 = readDirectorySync('./included_files')

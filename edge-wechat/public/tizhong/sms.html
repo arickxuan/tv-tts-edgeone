@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sms</title>
+    <link rel="stylesheet" href="/public/tizhong/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏋️ sms记录</h1>
+        </header>
+
+        <main>
+
+            <!-- 历史记录 -->
+            <section class="history-section">
+                <h2>历史记录</h2>
+                <div class="controls">
+                    <button onclick="loadRecords()" class="btn-secondary">🔄 刷新数据</button>
+                </div>
+                <div id="recordsList" class="records-list">
+                    <p class="loading">加载中...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据同步至飞书表格 | <a href="#" onclick="loadRecords()">手动刷新</a></p>
+        </footer>
+    </div>
+
+    <script>
+        function ensureAdminToken() {
+            let token = localStorage.getItem('x-admin-token');
+            if (!token) {
+                token = window.prompt('请输入 x-admin-token');
+                if (!token) {
+                    alert('未提供 x-admin-token，无法加载数据');
+                    return null;
+                }
+                localStorage.setItem('x-admin-token', token);
+            }
+            return token;
+        }
+
+        // 页面加载时设置默认日期
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = ensureAdminToken();
+            if (!token) return;
+
+            const dateEl = document.getElementById('date');
+            if (dateEl) {
+                const today = new Date().toISOString().split('T')[0];
+                dateEl.value = today;
+            }
+            loadRecords();
+        });
+
+        // 加载历史记录
+        async function loadRecords() {
+            const recordsList = document.getElementById('recordsList');
+            recordsList.innerHTML = '<p class="loading">⏳ 加载中...</p>';
+            const token = ensureAdminToken();
+            if (!token) {
+                recordsList.innerHTML = '<p class="error">❌ 缺少 x-admin-token</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/tizhong/api/sms/records', {
+                    headers: {
+                        'x-admin-token': token
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayRecords(result.data);
+                    localStorage.setItem('x-admin-token', token);
+                } else {
+                    throw new Error('获取记录失败');
+                    localStorage.removeItem('x-admin-token');
+                }
+            } catch (error) {
+                localStorage.removeItem('x-admin-token');
+                recordsList.innerHTML = `<p class="error">❌ 加载失败：${error.message}</p>`;
+            }
+        }
+
+        // 显示记录
+        function displayRecords(data) {
+            const recordsList = document.getElementById('recordsList');
+            
+            if (!data.valueRange || !data.valueRange.values || data.valueRange.values.length === 0) {
+                recordsList.innerHTML = '<p class="no-data">📭 暂无记录，开始记录体重吧！</p>';
+                return;
+            }
+            
+            const values = data.valueRange.values;
+            // 跳过表头（如果存在）
+            const records = values;
+            
+            let html = '<table class="records-table">';
+            html += `
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>发送人</th>
+                        <th>内容</th>
+                        <th>索引</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            records.forEach((row, index) => {
+                if (index === 0 && row[0] === '日期') return; // 跳表头
+                html += `
+                    <tr>
+                        <td>${row[0] || ''}</td>
+                        <td>${row[1] || ''}</td>
+                        <td>${row[2] || ''}</td>
+                        <td>${row[3] || ''}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            recordsList.innerHTML = html;
+        }
+
+        // 切换加载状态
+        function toggleLoading(isLoading) {
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            if (isLoading) {
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'inline';
+                submitBtn.disabled = true;
+            } else {
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
