@@ -125,12 +125,19 @@ function getFeishuErrorMessage(code) {
 }
 
 // 查询飞书表格记录
-async function getRecordsFromFeishu(pageSize = 100) {
+async function getRecordsFromFeishu(source = 'tizhong',pageSize = 100) {
     try {
         const token = await getTenantAccessToken();
+        if(source === 'tizhong') {
+            spreadsheetToken = FEISHU_CONFIG.spreadsheetToken;
+            sheetId = FEISHU_CONFIG.sheetId;
+        } else if(source === 'sms') {
+            spreadsheetToken = FEISHU_SMS_SPREADSHEET_TOKEN;
+            sheetId = FEISHU_SMS_SHEET_ID;
+        }
 
         const response = await axios.get(
-            `https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/${FEISHU_CONFIG.spreadsheetToken}/values/${FEISHU_CONFIG.sheetId}`,
+            `https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/${spreadsheetToken}/values/${sheetId}`,
             {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -238,6 +245,22 @@ app.post('/api/weight', async (req, res) => {
 app.get('/api/weights', async (req, res) => {
     try {
         const result = await getRecordsFromFeishu();
+        res.json({
+            success: true,
+            data: result.data
+        });
+    } catch (error) {
+        console.error('获取体重记录错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取记录失败，请稍后重试'
+        });
+    }
+});
+
+app.get('/api/sms/records', async (req, res) => {
+    try {
+        const result = await getRecordsFromFeishu("sms");
         res.json({
             success: true,
             data: result.data
