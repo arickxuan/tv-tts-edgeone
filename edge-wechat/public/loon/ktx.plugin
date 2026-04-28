@@ -1,0 +1,19 @@
+#!name = KTX 看天下增强
+#!desc = KTX 看天下全功能解锁：VIP会员、免费杂志、免费文章
+#!author = arick
+#!homepage = 
+#!icon = https://ktx.cn/favicon.ico
+#!category = 工具
+#!tag = ktx,unlock,vip
+
+[General]
+bypass-tun = 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12
+skip-proxy = 127.0.0.1, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12, localhost, *.local, captive.apple.com
+bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.0.0.0/24,192.0.2.0/24,192.88.99.0/24,192.168.0.0/16,198.18.0.0/15,198.51.100.0/24,203.0.113.0/24,224.0.0.0/4,255.255.255.255/32
+dns-server = system
+
+[Mitm]
+hostname = ktx.cn
+
+[Script]
+ktx_all = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/(magazine\/(all_mag_page|mag_column_detail|get_mag)|article\/article_detail2|mag\/pdf\/get_mag_pdf_list|my\/home\/get_home_center), script-path=https://wechat-push.arick.top/public/loon/ktx.js, requires-body=1, tag=KTX解锁
