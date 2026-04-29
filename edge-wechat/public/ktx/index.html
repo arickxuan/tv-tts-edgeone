@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>杂志阅读器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ---------- 侧边栏基础 ---------- */
+        .sidebar {
+            width: 340px;
+            background: white;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.25s ease;
+            z-index: 20;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #eef0f4;
+        }
+
+        .sidebar-header h2 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            min-width: 60px;
+        }
+
+        .type-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .mag-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mag-item {
+            padding: 16px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .mag-item:hover {
+            background: #f0f4ff;
+            border-color: #d0d9f0;
+        }
+
+        .mag-item.active {
+            background: #e8f0fe;
+            border-color: #2563eb;
+        }
+
+        .mag-item h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .mag-item p {
+            font-size: 13px;
+            color: #6b7280;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #eef0f4;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        /* ---------- 主内容 ---------- */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detail-card {
+            margin: 20px;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .detail-cover {
+            width: 100px;
+            height: 140px;
+            background: #e5e7eb;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        .detail-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .detail-info h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .detail-info .meta {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .detail-info .desc {
+            color: #4b5563;
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .content-panel {
+            flex: 1;
+            margin: 0 20px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #eef0f4;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .article-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .article-item {
+            padding: 16px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            transition: 0.15s;
+        }
+
+        .article-item:hover {
+            background: #f9fafb;
+        }
+
+        .article-item .title {
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .article-item .time {
+            font-size: 12px;
+            color: #9ca3af;
+            white-space: nowrap;
+        }
+
+        /* 弹窗 */
+        .article-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .article-modal {
+            background: white;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #6b7280;
+            line-height: 1;
+            padding: 0 8px;
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+            line-height: 1.7;
+            font-size: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            height: 200px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #6b7280;
+        }
+
+        .mag-price {
+            display: inline-block;
+            background: #fef3c7;
+            color: #b45309;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        /* ---------- 移动端浮动按钮 ---------- */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 30;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 15;
+        }
+
+        /* ========== 移动端适配 (≤768px) ========== */
+        @media screen and (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            /* 侧边栏变为滑出式，默认隐藏（靠左移出） */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 280px;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* 遮罩层 */
+            .sidebar-overlay {
+                display: none;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            /* 浮动按钮 */
+            .sidebar-toggle {
+                display: flex;
+            }
+
+            /* 主区域占满屏幕 */
+            .main {
+                width: 100%;
+                flex: 1;
+            }
+
+            .detail-card {
+                margin: 12px;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .detail-cover {
+                width: 80px;
+                height: 110px;
+            }
+
+            .content-panel {
+                margin: 0 12px 12px;
+            }
+
+            .panel-header {
+                padding: 12px 16px;
+            }
+
+            .article-list {
+                padding: 8px;
+            }
+
+            .article-item {
+                padding: 14px 8px;
+            }
+
+            /* 弹窗放大 */
+            .article-modal {
+                width: 95%;
+                max-height: 90vh;
+                border-radius: 16px;
+            }
+
+            .modal-header {
+                padding: 16px;
+            }
+
+            .modal-body {
+                padding: 16px;
+            }
+
+            .modal-header h3 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 遮罩层（移动端） -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>📰 杂志列表</h2>
+            <div class="type-selector" id="typeSelector">
+                <button class="type-btn active" data-type="1">看天下</button>
+                <button class="type-btn" data-type="2">V课</button>
+                <button class="type-btn" data-type="3">Vbook</button>
+                <button class="type-btn" data-type="4">专栏</button>
+            </div>
+        </div>
+        <div class="mag-list" id="magList">
+            <div class="loading">加载中…</div>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- 浮动按钮（移动端） -->
+    <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+    <!-- 右侧主内容 -->
+    <div class="main">
+        <div class="detail-card" id="magDetail">
+            <div class="empty-state">👈 请选择一本杂志</div>
+        </div>
+        <div class="content-panel" id="contentPanel">
+            <div class="panel-header"><span id="panelTitle">目录 / 文章</span></div>
+            <div class="article-list" id="articleList">
+                <div class="empty-state">请先选择杂志</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE = '/ktx';
+        let currentMagType = 1;
+        let currentPageNo = 0;
+        let currentMagId = null;
+
+        // DOM
+        const typeBtns = document.querySelectorAll('.type-btn');
+        const magListEl = document.getElementById('magList');
+        const paginationEl = document.getElementById('pagination');
+        const magDetailEl = document.getElementById('magDetail');
+        const panelTitleEl = document.getElementById('panelTitle');
+        const articleListEl = document.getElementById('articleList');
+
+        // 移动端侧边栏控制
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('show');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('show');
+        }
+
+        sidebarToggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // 选择杂志后自动关闭侧边栏（移动端）
+        function autoCloseSidebarIfMobile() {
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        }
+
+        // 原业务初始化
+        fetchMagList();
+
+        typeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMagType = Number(btn.dataset.type);
+                currentPageNo = 0;
+                currentMagId = null;
+                fetchMagList();
+                clearDetailAndArticles();
+            });
+        });
+
+        async function fetchMagList() {
+            magListEl.innerHTML = '<div class="loading">加载中…</div>';
+            try {
+                const res = await fetch(`${BASE}/v3/api/magazine/all_mag_page_3?pageNo=${currentPageNo}&magType=${currentMagType}&pageSize=10`);
+                const data = await res.json();
+                if (data.status === 1 && data.magList) {
+                    renderMagList(data.magList);
+                    const pageInfo = data.pageInfo || {};
+                    renderPagination(pageInfo.pageCount || 1);
+                } else {
+                    magListEl.innerHTML = '<div class="empty-state">暂无数据</div>';
+                }
+            } catch (err) {
+                magListEl.innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        function renderMagList(mags) {
+            if (!mags || mags.length === 0) {
+                magListEl.innerHTML = '<div class="empty-state">暂无杂志</div>';
+                return;
+            }
+            magListEl.innerHTML = mags.map(mag => `
+        <div class="mag-item ${mag.id === currentMagId ? 'active' : ''}" data-id="${mag.id}" data-type="${mag.magType || currentMagType}">
+          <h4>${mag.title || '未命名杂志'} ${mag.isNew ? '<span class="mag-price">新</span>' : ''}</h4>
+          <p>${mag.subtitle || ''}</p>
+        </div>
+      `).join('');
+
+            document.querySelectorAll('.mag-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = parseInt(item.dataset.id);
+                    const type = Number(item.dataset.type);
+                    selectMagazine(id, type);
+                    autoCloseSidebarIfMobile();  // 选择后关闭侧边栏
+                });
+            });
+        }
+
+        function renderPagination(totalPages) {
+            paginationEl.innerHTML = `
+        <button class="page-btn" id="prevPage" ${currentPageNo <= 0 ? 'disabled' : ''}>上一页</button>
+        <span style="font-size:13px; color:#6b7280;">${currentPageNo + 1} / ${totalPages}</span>
+        <button class="page-btn" id="nextPage" ${currentPageNo >= totalPages - 1 ? 'disabled' : ''}>下一页</button>
+      `;
+            document.getElementById('prevPage')?.addEventListener('click', () => {
+                if (currentPageNo > 0) { currentPageNo--; fetchMagList(); }
+            });
+            document.getElementById('nextPage')?.addEventListener('click', () => {
+                if (currentPageNo < totalPages - 1) { currentPageNo++; fetchMagList(); }
+            });
+        }
+
+        async function selectMagazine(magId, magType) {
+            currentMagId = magId;
+            document.querySelectorAll('.mag-item').forEach(el => {
+                el.classList.toggle('active', parseInt(el.dataset.id) === magId);
+            });
+            fetchMagDetail(magId);
+            if (magType === 4) {
+                fetchArticleListByMag(magId);
+            } else {
+                fetchColumnDetail(magId);
+            }
+        }
+
+        async function fetchMagDetail(magId) {
+            magDetailEl.innerHTML = '<div class="loading">加载详情…</div>';
+            try {
+                const res = await fetch(`${BASE}/v3/api/magazine/get_mag?magId=${magId}`);
+                const json = await res.json();
+                const m = json.mag;
+                if (m) {
+                    const coverUrl = m.coverUrl || (m.cover ? `https://oss.ktx.cn/${m.cover}` : '');
+                    magDetailEl.innerHTML = `
+            <div class="detail-cover">
+              ${coverUrl ? `<img src="${coverUrl}" alt="封面" onerror="this.parentElement.innerHTML='暂无封面'">` : '暂无封面'}
+            </div>
+            <div class="detail-info">
+              <h3>${m.title || '杂志名称'}</h3>
+              <div class="meta">
+                <div>📅 发布时间：${m.pubTimeFormat || m.releaseDateFormat || '未知'}  ·  价格：${m.price ? '¥' + (m.price / 100).toFixed(2) : '免费'}</div>
+                <div>类型：${m.magType || currentMagType}${m.volYear ? '  ·  ' + m.volYear + '年 第' + m.vol + '期' : ''}</div>
+              </div>
+              <div class="desc">${m.subtitle || '暂无简介'}</div>
+            </div>
+          `;
+                } else {
+                    magDetailEl.innerHTML = '<div class="empty-state">详情加载失败</div>';
+                }
+            } catch (err) {
+                magDetailEl.innerHTML = '<div class="empty-state">请求失败</div>';
+            }
+        }
+
+        async function fetchColumnDetail(magId) {
+            panelTitleEl.textContent = '📑 杂志目录';
+            articleListEl.innerHTML = '<div class="loading">加载目录…</div>';
+            try {
+                const res = await fetch(`${BASE}/v3/api/magazine/mag_column_detail?magId=${magId}`);
+                const json = await res.json();
+                if (json.status === 1 && json.columnList) {
+                    let allArticles = [];
+                    json.columnList.forEach(col => {
+                        if (col.articles && col.articles.length) {
+                            allArticles = allArticles.concat(col.articles);
+                        }
+                    });
+                    renderArticleItems(allArticles);
+                } else {
+                    articleListEl.innerHTML = '<div class="empty-state">暂无目录</div>';
+                }
+            } catch (err) {
+                articleListEl.innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        async function fetchArticleListByMag(magId) {
+            panelTitleEl.textContent = '📄 文章列表';
+            articleListEl.innerHTML = '<div class="loading">加载文章…</div>';
+            try {
+                const res = await fetch(`${BASE}/v3/api/article/get_article_list_by_mag?magId=${magId}&pageSize=20&sort=TIME_DESC&pageNo=0`);
+                const json = await res.json();
+                if (json.status === 1 && json.articles) {
+                    renderArticleItems(json.articles);
+                } else {
+                    articleListEl.innerHTML = '<div class="empty-state">暂无文章</div>';
+                }
+            } catch (err) {
+                articleListEl.innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        function renderArticleItems(items) {
+            if (!items || items.length === 0) {
+                articleListEl.innerHTML = '<div class="empty-state">暂无内容</div>';
+                return;
+            }
+            articleListEl.innerHTML = items.map(item => `
+        <div class="article-item" data-article-id="${item.id || item.articleId}">
+          <span class="title">${item.title || '无标题'}</span>
+          <span class="time">${item.publishTime ? new Date(item.publishTime).toLocaleDateString() : ''}</span>
+        </div>
+      `).join('');
+
+            document.querySelectorAll('.article-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const articleId = el.dataset.articleId;
+                    if (articleId) openArticle(articleId);
+                });
+            });
+        }
+
+        async function openArticle(articleId) {
+            const overlay = document.createElement('div');
+            overlay.className = 'article-overlay';
+            overlay.innerHTML = `
+        <div class="article-modal">
+          <div class="modal-header">
+            <h3>文章加载中…</h3>
+            <button class="modal-close">&times;</button>
+          </div>
+          <div class="modal-body">加载中…</div>
+        </div>
+      `;
+            document.body.appendChild(overlay);
+
+            const closeBtn = overlay.querySelector('.modal-close');
+            closeBtn.addEventListener('click', () => overlay.remove());
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+            const modalBody = overlay.querySelector('.modal-body');
+            const modalTitle = overlay.querySelector('.modal-header h3');
+
+            try {
+                const res = await fetch(`${BASE}/v3/api/article/article_detail2?articleId=${articleId}`);
+                const json = await res.json();
+                const article = json.article;
+                if (article) {
+                    modalTitle.textContent = article.title || '文章';
+
+                    // 判断是否有正文内容
+                    const hasContent = article.content && article.content.trim() !== '';
+                    if (hasContent) {
+                        modalBody.innerHTML = article.content;
+                    } else if (article.articleImgs && article.articleImgs.length > 0) {
+                        // 用图片列表构建内容
+                        modalBody.innerHTML = article.articleImgs.map(img => {
+                            const title = img.title ? `<div style="font-weight:600; margin:8px 0 4px;">${img.title}</div>` : '';
+                            const desc = img.content ? `<div style="color:#666; font-size:14px; margin-bottom:12px;">${img.content}</div>` : '';
+                            return `
+            <div style="margin-bottom: 24px;">
+              ${title}
+              <img src="${img.coverUrl || img.cover}" alt="${img.title || ''}" style="max-width:100%; border-radius:8px;" />
+              ${desc}
+            </div>
+          `;
+                        }).join('');
+                    } else {
+                        modalBody.textContent = '（无内容）';
+                    }
+
+                    // 图片自适应处理（适用于所有图片）
+                    modalBody.querySelectorAll('img').forEach(img => {
+                        img.style.maxWidth = '100%';
+                        img.style.borderRadius = '8px';
+                    });
+                } else {
+                    modalBody.textContent = '文章内容为空';
+                }
+            } catch (err) {
+                modalBody.textContent = '加载失败，请重试';
+            }
+        }
+
+        function clearDetailAndArticles() {
+            magDetailEl.innerHTML = '<div class="empty-state">👈 请选择一本杂志</div>';
+            panelTitleEl.textContent = '目录 / 文章';
+            articleListEl.innerHTML = '<div class="empty-state">请先选择杂志</div>';
+        }
+    </script>
+</body>
+
+</html>
