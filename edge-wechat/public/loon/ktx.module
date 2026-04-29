@@ -1,0 +1,15 @@
+#!name=KTX
+#!desc=看天下
+#!homepage=https://arick.top
+#!author=arick
+[Script]
+KTX all = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ script-path=https://wechat-push.arick.top/public/loon/all_mag_page.js, requires-body=true
+KTX vip = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/my\/home\/get_home_center.*$ script-path=https://wechat-push.arick.top/public/loon/get_home_center.js, requires-body=true, timeout=60
+KTX article = ytpe=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2 script-path=https://wechat-push.arick.top/public/loon/article_detail2.js, requires-body=true, timeout=60
+hKTX mag = type=http-response  , pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/get_mag.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag.js, requires-body=true, timeout=60
+KTX pdf = type=http-response  , pattern=^https?:\/\/ktx\.cn\/v3\/api\/mag\/pdf\/get_mag_pdf_list.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag_pdf_list.js, requires-body=true, timeout=60
+KTX mag detail = type=http-response  , pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/mag_column_detail script-path=https://wechat-push.arick.top/public/loon/mag_column_detail.js, requires-body=true, timeout=60
+
+
+[MITM]
+hostname = %APPEND% ktx.cn
