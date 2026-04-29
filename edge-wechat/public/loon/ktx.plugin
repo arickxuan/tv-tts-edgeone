@@ -16,10 +16,10 @@ dns-server = system
 hostname = ktx.cn
 
 [Script]
-# ktx_all = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/(magazine\/(all_mag_page|mag_column_detail|get_mag)|article\/article_detail2|mag\/pdf\/get_mag_pdf_list|my\/home\/get_home_center), script-path=https://wechat-push.arick.top/public/loon/ktx.js, requires-body=1, tag=KTX解锁
-vip = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/my\/home\/get_home_center.*$ script-path=https://wechat-push.arick.top/public/loon/get_home_center.js, requires-body=1, tag=KTX home
-all = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ script-path=https://wechat-push.arick.top/public/loon/all_mag_page.js, requires-body=1, tag=KTX all
-article = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2 script-path=https://wechat-push.arick.top/public/loon/article_detail2.js, requires-body=1, tag=KTX article
-get_mag = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/get_mag.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag.js, requires-body=1, tag=KTX mag
-get_mag_pdf = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/mag\/pdf\/get_mag_pdf_list.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag_pdf_list.js, requires-body=1, tag=KTX pdf
-mag = type=http-response, pattern=^https?:\/\/ktx\.cn\/v3\/api\/magazine\/mag_column_detail script-path=https://wechat-push.arick.top/public/loon/mag_column_detail.js, requires-body=1, tag=KTX mag detail
+# ttp-response  ^https?:\/\/ktx\.cn\/v3\/api\/(magazine\/(all_mag_page|mag_column_detail|get_mag)|article\/article_detail2|mag\/pdf\/get_mag_pdf_list|my\/home\/get_home_center).*$  script-path=https://wechat-push.arick.top/public/loon/ktx.js
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/my\/home\/get_home_center.*$ script-path=https://wechat-push.arick.top/public/loon/get_home_center.js, requires-body=true, tag=KTX vip
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ script-path=https://wechat-push.arick.top/public/loon/all_mag_page.js, requires-body=true, tag=KTX all
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2 script-path=https://wechat-push.arick.top/public/loon/article_detail2.js, requires-body=1, tag=KTX article
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/get_mag.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag.js, requires-body=1, tag=KTX mag
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/mag\/pdf\/get_mag_pdf_list.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag_pdf_list.js, requires-body=1, tag=KTX pdf
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/mag_column_detail script-path=https://wechat-push.arick.top/public/loon/mag_column_detail.js, requires-body=1, tag=KTX mag detail

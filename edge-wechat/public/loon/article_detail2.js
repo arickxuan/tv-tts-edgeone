@@ -1,11 +1,16 @@
 // https://ktx.cn/v3/api/article/article_detail2*
 
 // ^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2
+
+let url = $request.url;
+
+console.log("=== 脚本开始执行 ===");
+console.log(url);
+
 let responseBody = $response.body;
 
 if (!responseBody) {
   $done({});
-  return;
 }
 
 try {
@@ -18,6 +23,13 @@ try {
   body["article"]["isFree"] = 1;
   body["article"]["mag"]["isfree"] = 1;
   body["article"]["mag"]["isBuyArticle"] = 1;
+
+
+  if(body.mag && body.mag.isBuyMag){
+    body.mag.isBuyMag =1;
+  }
+  
+  body.isBuyMag = 1;
   
   $done({body: JSON.stringify(body)});
   

@@ -2,13 +2,24 @@
 // let obj = JSON.parse(body);
 
 // https://ktx.cn/v3/api/magazine/all_mag_page*
-// ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$
+// 
+/**
+[rewrite_local]
+
+// ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/jihu.js
+
+
+[mitm]
+
+hostname = ktx.cn
+
+**/
+
 
 let responseBody = $response.body;
 
 if (!responseBody) {
   $done({});
-  return;
 }
 
 try {
@@ -16,10 +27,11 @@ try {
   
   // 检查 magList 是否存在且为数组
   if (body?.magList && Array.isArray(body.magList)) {
-    body.magList.forEach(item => {
+    Object.keys(body.magList).forEach(item => {
+    //body.magList.forEach(item => {
       if (item) {
-        item.isfree = 1;
-        item.isBuyMag = 1;
+        body.magList[item].isfree = 1;
+        body.magList[item].isBuyMag = 1;
       }
     });
   } else {

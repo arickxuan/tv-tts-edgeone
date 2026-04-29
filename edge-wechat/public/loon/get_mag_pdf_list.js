@@ -6,7 +6,6 @@ let responseBody = $response.body;
 
 if (!responseBody) {
   $done({});
-  return;
 }
 
 try {
