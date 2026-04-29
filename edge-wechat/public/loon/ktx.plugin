@@ -18,10 +18,10 @@ hostname = ktx.cn
 [Script]
 # ttp-response  ^https?:\/\/ktx\.cn\/v3\/api\/(magazine\/(all_mag_page|mag_column_detail|get_mag)|article\/article_detail2|mag\/pdf\/get_mag_pdf_list|my\/home\/get_home_center).*$  script-path=https://wechat-push.arick.top/public/loon/ktx.js
 
-http-response ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ script-path=https://wechat-push.arick.top/public/loon/all_mag_page.js, requires-body=true, timeout=60, tag=ktx all
+http-response ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/all_mag_page.*$ script-path=https://wechat-push.arick.top/public/loon/all_mag_page.js, requires-body=true, timeout=60, tag=KTX all
 http-response ^https?:\/\/ktx\.cn\/v3\/api\/my\/home\/get_home_center.*$ script-path=https://wechat-push.arick.top/public/loon/get_home_center.js, requires-body=true, timeout=60,tag=KTX vip
-http-response  ^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2 script-path=https://wechat-push.arick.top/public/loon/article_detail2.js, requires-body=1, timeout=60,tag=KTX article
-http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/get_mag.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag.js, requires-body=1, timeout=60,tag=KTX mag
-http-response  ^https?:\/\/ktx\.cn\/v3\/api\/mag\/pdf\/get_mag_pdf_list.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag_pdf_list.js, requires-body=1, timeout=60,tag=KTX pdf
-http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/mag_column_detail script-path=https://wechat-push.arick.top/public/loon/mag_column_detail.js, requires-body=1, timeout=60,tag=KTX mag detail
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/article\/article_detail2 script-path=https://wechat-push.arick.top/public/loon/article_detail2.js, requires-body=true, timeout=60,tag=KTX article
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/get_mag.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag.js, requires-body=true, timeout=60,tag=KTX mag
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/mag\/pdf\/get_mag_pdf_list.*$ script-path=https://wechat-push.arick.top/public/loon/get_mag_pdf_list.js, requires-body=true, timeout=60,tag=KTX pdf
+http-response  ^https?:\/\/ktx\.cn\/v3\/api\/magazine\/mag_column_detail script-path=https://wechat-push.arick.top/public/loon/mag_column_detail.js, requires-body=true, timeout=60,tag=KTX mag detail
 
