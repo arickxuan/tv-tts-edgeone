@@ -1,0 +1,960 @@
+{
+  "info": {
+    "_postman_id": "465bb676-2fbf-41e9-b4e0-023c18cb83f1",
+    "name": "Giffgaff-swap-esim_20260409_Fixed",
+    "description": "本脚本可以将GiffGaff的实体SIM卡转换为ESIM，无需借助支持ESIM的手机。\n\n---\n\n原脚本由 pwrli大佬制作，由奶昔论坛 [NyaPass7 ](https://forum.naixi.net/space-uid-15488.html) 进行了扩展、修改、适配、更新最新的API与参数等\n\n---\n\n**2026-04-09 更新说明：**\n\n- 修复了CORS错误问题\n    \n- 更新了User-Agent和设备信息到最新版本\n    \n- 添加了手动Token Exchange请求\n    \n- 更新了所有GraphQL请求头\n    \n- 优化了esim相关配置、API接口\n    \n- 更新了最新giffgaff的head头信息\n    \n- 修复了其他版本因各种原因而无法使用的问题",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53831286",
+    "_collection_link": "https://go.postman.co/collection/53831286-465bb676-2fbf-41e9-b4e0-023c18cb83f1?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "=== OAuth2 认证流程 ===",
+      "item": [
+        {
+          "name": "步骤1: 使用pkce-generator.html生成参数",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://id.giffgaff.com/auth/oauth/authorize?response_type=code&client_id=4a05bf219b3985647d9b9a3ba610a9ce&redirect_uri=giffgaff://auth/callback/&scope=read&state={{oauth_state}}&code_challenge={{code_challenge}}&code_challenge_method=S256",
+              "protocol": "https",
+              "host": [
+                "id",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "auth",
+                "oauth",
+                "authorize"
+              ],
+              "query": [
+                {
+                  "key": "response_type",
+                  "value": "code"
+                },
+                {
+                  "key": "client_id",
+                  "value": "4a05bf219b3985647d9b9a3ba610a9ce"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "giffgaff://auth/callback/"
+                },
+                {
+                  "key": "scope",
+                  "value": "read"
+                },
+                {
+                  "key": "state",
+                  "value": "{{oauth_state}}"
+                },
+                {
+                  "key": "code_challenge",
+                  "value": "{{code_challenge}}"
+                },
+                {
+                  "key": "code_challenge_method",
+                  "value": "S256"
+                }
+              ]
+            },
+            "description": "【重要】请先使用 pkce-generator.html 生成参数！\n\n使用方法：\n\n1. 在浏览器中打开 pkce-generator.html 文件\n    \n2. 点击 \"生成参数\" 按钮\n    \n3. 将生成的值填入Postman的集合变量中：\n    - code_verifier ← Code Verifier\n        \n    - code_challenge ← Code Challenge\n        \n    - oauth_state ← State\n        \n4. 在HTML工具中点击 \"在新标签页打开授权URL\"\n    \n5. 登录Giffgaff账号，获取回调URL中的code\n    \n6. 将code填入 auth_code 变量\n    \n7. 然后执行步骤2: 交换Token"
+          },
+          "response": []
+        },
+        {
+          "name": "步骤2: 交换Token (使用授权码)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const codeVerifier = pm.collectionVariables.get('code_verifier');",
+                  "if (!codeVerifier) {",
+                  "    throw new Error('请先执行步骤1获取code_verifier');",
+                  "}",
+                  "",
+                  "const code = pm.collectionVariables.get('auth_code');",
+                  "if (!code) {",
+                  "    throw new Error('请在变量 auth_code 中填入从步骤1获取的授权码');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.access_token) {",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    console.log('Access Token 已保存');",
+                  "}",
+                  "if (response.refresh_token) {",
+                  "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic NGEwNWJmMjE5YjM5ODU2NDdkOWI5YTNiYTYxMGE5Y2U6T1F2NGNmaXlvbDhUdkNXNHlpTEdqMGMxQWtUUjNOMkpmUnpxN1hHcU14az0=",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code",
+                  "type": "text"
+                },
+                {
+                  "key": "code",
+                  "value": "{{auth_code}}",
+                  "type": "text"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "giffgaff://auth/callback/",
+                  "type": "text"
+                },
+                {
+                  "key": "code_verifier",
+                  "value": "{{code_verifier}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://id.giffgaff.com/auth/oauth/token",
+              "protocol": "https",
+              "host": [
+                "id",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "auth",
+                "oauth",
+                "token"
+              ]
+            },
+            "description": "使用从步骤1获取的授权码交换access token\n\n注意：需要先在变量 auth_code 中填入授权码"
+          },
+          "response": []
+        },
+        {
+          "name": "步骤3: 刷新Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.access_token) {",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "}",
+                  "if (response.refresh_token) {",
+                  "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic NGEwNWJmMjE5YjM5ODU2NDdkOWI5YTNiYTYxMGE5Y2U6T1F2NGNmaXlvbDhUdkNXNHlpTEdqMGMxQWtUUjNOMkpmUnpxN1hHcU14az0=",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token",
+                  "type": "text"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://id.giffgaff.com/auth/oauth/token",
+              "protocol": "https",
+              "host": [
+                "id",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "auth",
+                "oauth",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "=== eSIM 操作流程 ===",
+      "item": [
+        {
+          "name": "發送認證郵件 Send Email Verification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"email_code_ref\", pm.response.json().ref);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\t\"source\": \"esim\",\r\n\t\"preferredChannels\": [\"EMAIL\"]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://id.giffgaff.com/v4/mfa/challenge/me",
+              "protocol": "https",
+              "host": [
+                "id",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "v4",
+                "mfa",
+                "challenge",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "檢查郵件認證碼 Verify Email code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"email_signature\", pm.response.json().signature);"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n\t\"ref\": \"{{email_code_ref}}\",\r\n\t\"code\": \"{{email_code}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://id.giffgaff.com/v4/mfa/validation",
+              "protocol": "https",
+              "host": [
+                "id",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "v4",
+                "mfa",
+                "validation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "取得會員資訊 Get Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"memberId\", pm.response.json().data.memberProfile.id);\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "console.log(pm.collectionVariables.get(\"email_signature\"))\r",
+                  "if(pm.collectionVariables.get(\"email_signature\")==null || pm.collectionVariables.get(\"email_signature\")== \"\"){\r",
+                  "    console.error(\"Email 尚未驗證\");\r",
+                  "    throw new Error(\"Email 尚未驗證\");\r",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-name",
+                "value": "iOS 18.2",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-version",
+                "value": "17.46.11 1332",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query getMemberProfileAndSim {\r\n  memberProfile {\r\n    id\r\n    memberName\r\n    __typename\r\n  }\r\n  sim {\r\n    phoneNumber\r\n    status\r\n    __typename\r\n  }\r\n}\r\n",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "https://publicapi.giffgaff.com/gateway/graphql",
+              "protocol": "https",
+              "host": [
+                "publicapi",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "gateway",
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "申請 SIM卡 Reserve SIM",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"esim_ssn\", pm.response.json().data.reserveESim.esim.ssn);\r",
+                  "pm.collectionVariables.set(\"esim_activation_code\", pm.response.json().data.reserveESim.esim.activationCode);\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os",
+                "value": "iOS",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os-version",
+                "value": "18.2",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-build-number",
+                "value": "1332",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-manufacturer",
+                "value": "Apple",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-model",
+                "value": "iPhone SE",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-version",
+                "value": "17.46.11",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-id",
+                "value": "iPhone12,8",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-bundle-version",
+                "value": "v0",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-name",
+                "value": "iOS 18.2",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-version",
+                "value": "17.46.11 1332",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation reserveESim($input: ESimReservationInput!) {\r\n  reserveESim: reserveESim(input: $input) {\r\n    id\r\n    memberId\r\n    reservationStartDate\r\n    reservationEndDate\r\n    status\r\n    esim {\r\n      ssn\r\n      activationCode\r\n      deliveryStatus\r\n      associatedMemberId\r\n      __typename\r\n    }\r\n    __typename\r\n  }\r\n}\r\n",
+                "variables": "{\r\n    \"input\": {\r\n\t\t\"memberId\": \"{{memberId}}\",\r\n\t\t\"userIntent\": \"SWITCH\"\r\n\t}\r\n}"
+              }
+            },
+            "url": {
+              "raw": "https://publicapi.giffgaff.com/gateway/graphql",
+              "protocol": "https",
+              "host": [
+                "publicapi",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "gateway",
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "申請交換eSIM Swap SIM",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os",
+                "value": "iOS",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os-version",
+                "value": "18.2",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-build-number",
+                "value": "1332",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-manufacturer",
+                "value": "Apple",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-model",
+                "value": "iPhone SE",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-version",
+                "value": "17.46.11",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-id",
+                "value": "iPhone12,8",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-bundle-version",
+                "value": "v0",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-name",
+                "value": "iOS 18.2",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-version",
+                "value": "17.46.11 1332",
+                "type": "text"
+              },
+              {
+                "key": "X-MFA-Signature",
+                "value": "{{email_signature}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation SwapSim($activationCode: String!, $mfaSignature: String!, $mfaRef: String!) {\r\n  swapSim(activationCode: $activationCode, mfaSignature: $mfaSignature, mfaRef: $mfaRef) {\r\n    old {\r\n      ssn\r\n      activationCode\r\n      __typename\r\n    }\r\n    new {\r\n      ssn\r\n      activationCode\r\n      __typename\r\n    }\r\n    __typename\r\n  }\r\n}\r\n",
+                "variables": "{\r\n\t\"activationCode\": \"{{esim_activation_code}}\",\r\n\t\"mfaSignature\": \"{{email_signature}}\",\r\n\t\"mfaRef\": \"{{email_code_ref}}\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "https://publicapi.giffgaff.com/gateway/graphql",
+              "protocol": "https",
+              "host": [
+                "publicapi",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "gateway",
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "取得eSIM Get ESIMs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os",
+                "value": "iOS",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os-version",
+                "value": "18.2",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-build-number",
+                "value": "1332",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-manufacturer",
+                "value": "Apple",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-model",
+                "value": "iPhone SE",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-version",
+                "value": "17.46.11",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-name",
+                "value": "iOS 18.2",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-version",
+                "value": "17.46.11 1332",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query getESims($deliveryStatus: ESimDeliveryStatus!) {\r\n  eSims(deliveryStatus: $deliveryStatus) {\r\n    ssn\r\n    __typename\r\n  }\r\n}\r\n",
+                "variables": "{\r\n\t\"deliveryStatus\": \"DOWNLOADABLE\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "https://publicapi.giffgaff.com/gateway/graphql",
+              "protocol": "https",
+              "host": [
+                "publicapi",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "gateway",
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "取得eSIM下載碼 Get ESIM Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"lpa_string\", pm.response.json().data.eSimDownloadToken.lpaString);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "giffgaff/1332 CFNetwork/1568.300.101 Darwin/24.2.0",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os",
+                "value": "iOS",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-os-version",
+                "value": "18.2",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-build-number",
+                "value": "1332",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-manufacturer",
+                "value": "Apple",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-model",
+                "value": "iPhone SE",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-version",
+                "value": "17.46.11",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-device-id",
+                "value": "iPhone12,8",
+                "type": "text"
+              },
+              {
+                "key": "x-gg-app-bundle-version",
+                "value": "v0",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-name",
+                "value": "iOS 18.2",
+                "type": "text"
+              },
+              {
+                "key": "apollographql-client-version",
+                "value": "17.46.11 1332",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query eSimDownloadToken($ssn: String!) {\r\n  eSimDownloadToken(ssn: $ssn) {\r\n    id\r\n    host\r\n    matchingId\r\n    lpaString\r\n    __typename\r\n  }\r\n}\r\n",
+                "variables": "{\r\n\t\"ssn\": \"{{esim_ssn}}\"\r\n}"
+              }
+            },
+            "url": {
+              "raw": "https://publicapi.giffgaff.com/gateway/graphql",
+              "protocol": "https",
+              "host": [
+                "publicapi",
+                "giffgaff",
+                "com"
+              ],
+              "path": [
+                "gateway",
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "產生QRCode Get ESIM QRCode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "image/svg+xml",
+                "type": "text"
+              },
+              {
+                "key": "X-QR-Width",
+                "value": "400",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "X-QR-Height",
+                "value": "400",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{lpa_string}}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://qrcode.show/",
+              "protocol": "https",
+              "host": [
+                "qrcode",
+                "show"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "memberId",
+      "value": ""
+    },
+    {
+      "key": "esim_ssn",
+      "value": ""
+    },
+    {
+      "key": "esim_activation_code",
+      "value": ""
+    },
+    {
+      "key": "email_code_ref",
+      "value": ""
+    },
+    {
+      "key": "email_signature",
+      "value": ""
+    },
+    {
+      "key": "lpa_string",
+      "value": ""
+    },
+    {
+      "key": "email_code",
+      "value": ""
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "auth_code",
+      "value": "",
+      "description": "从OAuth授权回调URL中提取的授权码"
+    },
+    {
+      "key": "code_verifier",
+      "value": "",
+      "description": "PKCE code verifier"
+    },
+    {
+      "key": "code_challenge",
+      "value": "",
+      "description": "PKCE code challenge (S256)"
+    },
+    {
+      "key": "oauth_state",
+      "value": "",
+      "description": "OAuth state参数"
+    }
+  ]
+}

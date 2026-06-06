@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>giffgaff 登录交互 By 奶昔@NyaPass7</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.copy {
+            background: #28a745;
+            font-size: 14px;
+            padding: 8px 16px;
+            margin-left: 10px;
+        }
+        button.copy:hover {
+            background: #218838;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .auth-url {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Giffgaff OAuth PKCE 生成器</h1>
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 8px; margin: 20px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <p style="margin: 0; font-size: 16px; font-weight: bold;">
+                ✨ 本页面作者：<a href="https://forum.naixi.net/space-uid-15488.html" target="_blank" style="color: #ffd700; text-decoration: none; border-bottom: 2px solid #ffd700; padding-bottom: 2px;">奶昔论坛@NyaPass7</a> ✨
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Giffgaff OAuth PKCE 生成工具</p>
+        </div>
+
+        
+        <div class="step">
+            <h2>步骤 1: 生成参数</h2>
+            <button onclick="generateParams()">生成参数</button>
+            
+            <label>Code Verifier:</label>
+            <div class="input-group">
+                <input type="text" id="codeVerifier" readonly>
+                <button class="copy" onclick="copyText('codeVerifier')">复制</button>
+            </div>
+            
+            <label>Code Challenge:</label>
+            <div class="input-group">
+                <input type="text" id="codeChallenge" readonly>
+                <button class="copy" onclick="copyText('codeChallenge')">复制</button>
+            </div>
+            
+            <label>State:</label>
+            <div class="input-group">
+                <input type="text" id="state" readonly>
+                <button class="copy" onclick="copyText('state')">复制</button>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>步骤 2: 构建授权URL</h2>
+            <label>授权URL:</label>
+            <div class="auth-url" id="authUrl"></div>
+            <button onclick="openAuthUrl()">在新标签页打开授权URL</button>
+        </div>
+        
+        <div class="step">
+            <h2>步骤 3: 登录并获取授权码</h2>
+            <p>在授权页面登录后，浏览器会尝试打开 <code>giffgaff://auth/callback/?code=XXXXXX&state=XXXXXX</code></p>
+            <p>从浏览器地址栏复制完整的回调URL，提取 <strong>code</strong> 参数值</p>
+            
+            <label>授权码 (Auth Code):</label>
+            <div class="input-group">
+                <input type="text" id="authCode" placeholder="在此粘贴 code 参数值">
+                <button class="copy" onclick="copyText('authCode')">复制</button>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h2>步骤 4: 将参数填入Postman</h2>
+            <p>将以下值填入Postman的集合变量中：</p>
+            <ul>
+                <li><code>code_verifier</code> ← 步骤1中的Code Verifier</li>
+                <li><code>code_challenge</code> ← 步骤1中的Code Challenge</li>
+                <li><code>oauth_state</code> ← 步骤1中的State</li>
+                <li><code>auth_code</code> ← 步骤3中的Auth Code</li>
+            </ul>
+            <p class="success">然后在Postman中执行 "步骤2: 交换Token" 请求！</p>
+        </div>
+    </div>
+
+    <script>
+        function generateCodeVerifier() {
+            const array = new Uint8Array(96);
+            crypto.getRandomValues(array);
+            return btoa(String.fromCharCode.apply(null, array))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+            return btoa(String.fromCharCode.apply(null, new Uint8Array(hash)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        function generateState() {
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            return btoa(String.fromCharCode.apply(null, array))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        function generateAuthUrl(codeChallenge, state) {
+            const params = new URLSearchParams({
+                response_type: 'code',
+                client_id: '4a05bf219b3985647d9b9a3ba610a9ce',
+                redirect_uri: 'giffgaff://auth/callback/',
+                scope: 'read',
+                state: state,
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256'
+            });
+            return `https://id.giffgaff.com/auth/oauth/authorize?${params.toString()}`;
+        }
+
+        async function generateParams() {
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            const state = generateState();
+            const authUrl = generateAuthUrl(codeChallenge, state);
+            
+            document.getElementById('codeVerifier').value = codeVerifier;
+            document.getElementById('codeChallenge').value = codeChallenge;
+            document.getElementById('state').value = state;
+            document.getElementById('authUrl').textContent = authUrl;
+            
+            console.log('Code Verifier:', codeVerifier);
+            console.log('Code Challenge:', codeChallenge);
+            console.log('State:', state);
+            console.log('Auth URL:', authUrl);
+        }
+
+        function copyText(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand('copy');
+            
+            const originalText = element.value;
+            element.value = '✓ 已复制!';
+            setTimeout(() => {
+                element.value = originalText;
+            }, 1000);
+        }
+
+        function openAuthUrl() {
+            const authUrl = document.getElementById('authUrl').textContent;
+            if (authUrl) {
+                window.open(authUrl, '_blank');
+            } else {
+                alert('请先生成参数!');
+            }
+        }
+
+        window.onload = function() {
+            generateParams();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Base64转图片工具 - 在线转换与保存</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .header {
+            background: #1e2a3e;
+            color: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #2d3e54;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1:before {
+            content: "🖼️";
+            font-size: 1.8rem;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.8rem;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1e2a3e;
+            display: block;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: #fefefe;
+            border: 2px solid #dce3ec;
+            border-radius: 1.2rem;
+            resize: vertical;
+            transition: 0.2s;
+            line-height: 1.45;
+            color: #1f2a3e;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+        .helper-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1e40af;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #e0e7ff;
+            transform: scale(0.97);
+        }
+
+        .format-hint {
+            font-size: 0.75rem;
+            color: #5b6e8c;
+            background: #f1f5f9;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+        }
+
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1.8rem 0 2rem;
+        }
+
+        button {
+            background: #1e2a3e;
+            border: none;
+            padding: 0.75rem 1.6rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button i {
+            font-style: normal;
+            font-weight: normal;
+        }
+
+        button.primary {
+            background: #2563eb;
+            box-shadow: 0 8px 18px -6px #3b82f6;
+        }
+
+        button.primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        button.download {
+            background: #059669;
+        }
+
+        button.download:hover {
+            background: #047857;
+            transform: translateY(-2px);
+        }
+
+        button.reset {
+            background: #475569;
+        }
+
+        button.reset:hover {
+            background: #334155;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .preview-area {
+            background: #f8fafc;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            margin-top: 1rem;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            gap: 10px;
+        }
+
+        .preview-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            background: #e2e8f0;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            color: #334155;
+        }
+
+        .image-container {
+            background: #ffffff;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            padding: 1rem;
+            border: 1px dashed #cbd5e1;
+            transition: all 0.2s;
+            overflow: auto;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        }
+
+        .placeholder-message {
+            color: #94a3b8;
+            text-align: center;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .error-message {
+            color: #b91c1c;
+            background: #fee2e2;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            border-left: 5px solid #ef4444;
+        }
+
+        .footer {
+            padding: 1rem 2rem;
+            background: #f1f5f9;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #475569;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            .content {
+                padding: 1.5rem;
+            }
+            button {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h1>Base64 → 图片转换器</h1>
+        <p>将Base64编码字符串转换为图片，支持预览并保存为PNG/JPG等格式</p>
+    </div>
+    <div class="content">
+        <div class="input-group">
+            <label>📋 粘贴 Base64 字符串</label>
+            <textarea id="base64Input" rows="6" placeholder='例如: data:image/png;base64,iVBORw0KGgoAAAANS... 或 纯base64字符 (不含前缀)'></textarea>
+            <div class="helper-row">
+                <button type="button" class="example-btn" id="loadExampleBtn">📷 加载示例图片(Base64)</button>
+                <span class="format-hint">支持 data:image/... 或 纯base64 (自动识别图片类型)</span>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button id="convertBtn" class="primary">✨ 转换并预览</button>
+            <button id="downloadBtn" class="download" disabled>💾 保存图片到本地</button>
+            <button id="clearBtn" class="reset">🗑️ 清空所有</button>
+        </div>
+
+        <div class="preview-area">
+            <div class="preview-header">
+                <h3>🖼️ 图片预览</h3>
+                <span class="status-badge" id="previewStatus">等待转换</span>
+            </div>
+            <div id="imagePreviewContainer" class="image-container">
+                <div class="placeholder-message">
+                    <span>✨ 输入Base64后点击“转换并预览”</span>
+                    <span>⬅️ 或使用示例体验</span>
+                </div>
+            </div>
+            <div id="errorMsgArea" style="min-height: 50px;"></div>
+        </div>
+    </div>
+    <div class="footer">
+        ⚡ 支持 PNG / JPEG / GIF / WebP / SVG 等常见图片格式 | 纯前端转换，数据安全
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const textarea = document.getElementById('base64Input');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loadExampleBtn = document.getElementById('loadExampleBtn');
+        const imageContainer = document.getElementById('imagePreviewContainer');
+        const previewStatusSpan = document.getElementById('previewStatus');
+        const errorMsgArea = document.getElementById('errorMsgArea');
+
+        // 存储当前有效的图片对象URL和Blob，用于下载和清理内存
+        let currentImageUrl = null;
+        let currentBlob = null;
+        let currentImageType = 'image/png';   // 默认类型
+
+        // 辅助函数: 显示错误信息
+        function showError(message) {
+            errorMsgArea.innerHTML = `<div class="error-message">⚠️ ${escapeHtml(message)}</div>`;
+            previewStatusSpan.innerText = '转换失败';
+            previewStatusSpan.style.background = '#fee2e2';
+            previewStatusSpan.style.color = '#b91c1c';
+            // 如果之前有预览内容，不清除预览区域但显示错误占位符更友好（但保留容器描述）
+            if(imageContainer && !imageContainer.querySelector('.placeholder-message')) {
+                // 如果容器内已经展示图片，显示错误时可不清除图片占位，但最好展示错误同时不清掉之前的成功图？保持一致性：出错时保留原有预览？为了体验，错误时不清除旧图片，仅显示额外错误。
+                // 但为了防止歧义，我们不在错误时自动删除已有图片，只是额外给出错误提示。
+                // 但最好也把状态改一下，但是图片仍然显示旧的可能混淆，决定将预览区置为占位符（清除无效的图片）
+                // 为了整洁，清除当前预览显示并显示占位符
+                clearPreviewDisplay();
+            } else if(imageContainer.querySelector('.preview-image')) {
+                clearPreviewDisplay();
+            }
+            // 禁用下载按钮
+            downloadBtn.disabled = true;
+            revokeCurrentImageUrl();   // 之前的URL无效
+            currentBlob = null;
+        }
+
+        function clearError() {
+            errorMsgArea.innerHTML = '';
+        }
+
+        // 清除预览区域，显示占位符
+        function clearPreviewDisplay() {
+            imageContainer.innerHTML = `
+                <div class="placeholder-message">
+                    <span>🖼️ 暂无预览图片</span>
+                    <span>⬆️ 粘贴Base64并点击转换</span>
+                </div>
+            `;
+            previewStatusSpan.innerText = '等待转换';
+            previewStatusSpan.style.background = '#e2e8f0';
+            previewStatusSpan.style.color = '#334155';
+        }
+
+        // 撤销之前生成的ObjectURL
+        function revokeCurrentImageUrl() {
+            if (currentImageUrl) {
+                URL.revokeObjectURL(currentImageUrl);
+                currentImageUrl = null;
+            }
+        }
+
+        // 重置所有内部状态，清空输入可选
+        function resetAll() {
+            textarea.value = '';
+            clearPreviewDisplay();
+            clearError();
+            revokeCurrentImageUrl();
+            currentBlob = null;
+            downloadBtn.disabled = true;
+            previewStatusSpan.innerText = '等待转换';
+            previewStatusSpan.style.background = '#e2e8f0';
+            previewStatusSpan.style.color = '#334155';
+        }
+
+        // 简易XSS防护
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
+            });
+        }
+
+        // 核心转换函数: 输入base64字符串（可能含data:前缀） => 生成图片并预览，返回是否成功
+        async function convertBase64ToImage(base64Raw) {
+            clearError();
+            if (!base64Raw || base64Raw.trim() === '') {
+                showError('❌ 请输入Base64字符串，不能为空。');
+                return false;
+            }
+            
+            let base64Data = base64Raw.trim();
+            let mediaType = '';
+            let rawBase64 = '';
+            
+            // 1. 检测是否为 DataURL 格式 (data:image/xxx;base64,)
+            const dataUrlMatch = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+            if (dataUrlMatch) {
+                // 已经是完整的DataURL
+                mediaType = dataUrlMatch[1];   // 例如 image/png
+                rawBase64 = dataUrlMatch[2];
+                // 校验mediatype是否为图片类型
+                if (!mediaType.startsWith('image/')) {
+                    showError(`无效的MIME类型: "${mediaType}"，仅支持图片类型 (image/png, image/jpeg, image/gif, image/webp等)`);
+                    return false;
+                }
+            } else {
+                // 可能没有前缀，尝试自动检测图片类型（根据base64字符特征或者开头几个字节魔数）
+                // 检查常见图片magic numbers: 例如base64前几个字符
+                // 更可靠：尝试通过HTMLImageElement来解析 + canvas兜底? 但我们需要类型保存图片名。
+                // 策略：尝试将纯base64包装为 data:image/png;base64, 尝试能否加载，如果不成功再尝试其他格式。
+                // 但最好能从内容前缀推测类型。根据magic number:
+                let possibleType = null;
+                // 取base64前8个字符来简单判断
+                const prefix = rawBase64.length > 0 ? rawBase64.substring(0, 12) : base64Data.substring(0, 12);
+                // PNG: iVBORw0KGgo (标准base64前缀 iV...)
+                if (prefix.startsWith('iVBORw0KGgo')) {
+                    possibleType = 'image/png';
+                } 
+                // JPEG: /9j/4AAQSkZ (base64 以 /9j/ 开头)
+                else if (prefix.startsWith('/9j/')) {
+                    possibleType = 'image/jpeg';
+                }
+                // GIF: R0lGODlh / R0lGODdh
+                else if (prefix.startsWith('R0lGODlh') || prefix.startsWith('R0lGODdh')) {
+                    possibleType = 'image/gif';
+                }
+                // WebP: UklGR (base64: UklGR...)
+                else if (prefix.startsWith('UklGR')) {
+                    possibleType = 'image/webp';
+                }
+                // BMP: Qk0 或 Qk1 等 (BMP头 BM -> Qk0)
+                else if (prefix.startsWith('Qk0') || prefix.startsWith('Qk1') || prefix.startsWith('QkI')) {
+                    possibleType = 'image/bmp';
+                }
+                // SVG: 虽然base64不是典型二进制，但可能传入纯XML文本编码后的base64，但SVG比较特殊，我们也可以允许，通过text/xml检测但常规image/svg+xml
+                // 若检测不出，默认尝试作为PNG处理，用户可能需要明确前缀。
+                if (!possibleType) {
+                    // 如果没有任何魔数匹配，默认采用png尝试
+                    possibleType = 'image/png';
+                }
+                mediaType = possibleType;
+                rawBase64 = base64Data;   // 整个当作纯base64内容
+            }
+            
+            // 如果有原始dataUrl匹配的情况下rawBase64已填充，否则上一步填充完rawBase64
+            if (!rawBase64 && dataUrlMatch) {
+                rawBase64 = dataUrlMatch[2];
+            } else if (!rawBase64 && !dataUrlMatch) {
+                rawBase64 = base64Data;
+            }
+            
+            // 构建完整的 data URL
+            let fullDataUrl;
+            try {
+                fullDataUrl = `data:${mediaType};base64,${rawBase64}`;
+            } catch(e) {
+                showError('Base64字符串格式错误，无法构造DataURL。');
+                return false;
+            }
+            
+            // 通过 Image 加载测试是否有效
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    // 图片加载成功，创建canvas转换为Blob，用于下载和显示
+                    try {
+                        // 为了显示及后期下载，从dataURL生成Blob
+                        const byteString = atob(rawBase64);
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+                        const blob = new Blob([ab], { type: mediaType });
+                        const objectUrl = URL.createObjectURL(blob);
+                        
+                        // 清理旧的URL
+                        revokeCurrentImageUrl();
+                        currentImageUrl = objectUrl;
+                        currentBlob = blob;
+                        currentImageType = mediaType;
+                        
+                        // 更新预览区域
+                        imageContainer.innerHTML = `<img src="${objectUrl}" alt="预览图片" class="preview-image" style="max-width:100%; max-height:380px;">`;
+                        previewStatusSpan.innerText = `✅ 图片有效 (${mediaType.split('/')[1]?.toUpperCase() || 'IMAGE'})`;
+                        previewStatusSpan.style.background = '#dcfce7';
+                        previewStatusSpan.style.color = '#166534';
+                        downloadBtn.disabled = false;
+                        clearError();
+                        resolve(true);
+                    } catch (e) {
+                        console.error(e);
+                        showError(`Base64解码失败: ${e.message}。请确保输入的是有效的Base64编码。`);
+                        downloadBtn.disabled = true;
+                        revokeCurrentImageUrl();
+                        clearPreviewDisplay();
+                        resolve(false);
+                    }
+                };
+                img.onerror = (err) => {
+                    console.warn(err);
+                    let hint = '';
+                    if (!dataUrlMatch && !fullDataUrl.startsWith('data:image')) {
+                        hint = ' 若缺少图片MIME前缀，请尝试手动添加 data:image/png;base64, 或 data:image/jpeg;base64,';
+                    } else {
+                        hint = ' 请检查Base64字符串是否完整且有效，注意可能包含换行/空格。';
+                    }
+                    showError(`无效图片数据，浏览器无法解码。${hint}`);
+                    downloadBtn.disabled = true;
+                    revokeCurrentImageUrl();
+                    clearPreviewDisplay();
+                    resolve(false);
+                };
+                img.src = fullDataUrl;
+            });
+        }
+        
+        // 处理保存功能 (下载图片)
+        function downloadImage() {
+            if (!currentBlob || !currentImageUrl) {
+                showError('没有可下载的图片，请先成功转换图片');
+                return;
+            }
+            // 从当前Blob决定文件扩展名
+            let ext = 'png';
+            if (currentImageType === 'image/jpeg') ext = 'jpg';
+            else if (currentImageType === 'image/gif') ext = 'gif';
+            else if (currentImageType === 'image/webp') ext = 'webp';
+            else if (currentImageType === 'image/bmp') ext = 'bmp';
+            else if (currentImageType === 'image/svg+xml') ext = 'svg';
+            else ext = 'png';
+            
+            const filename = `converted_image_${Date.now()}.${ext}`;
+            // 创建临时a标签下载
+            const link = document.createElement('a');
+            link.href = currentImageUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 给个小反馈但不打扰
+            const oldStatus = previewStatusSpan.innerText;
+            previewStatusSpan.innerText = '📥 已下载!';
+            setTimeout(() => {
+                if (previewStatusSpan.innerText === '📥 已下载!') {
+                    previewStatusSpan.innerText = oldStatus;
+                }
+            }, 1200);
+        }
+        
+        // 加载内置示例 (一个红色渐变的小PNG图片Base64, 标准dataURL，展示漂亮示例)
+        function loadExample() {
+            // 生成一个简单但美观的渐变示例图片base64 (data:image/png;base64,iVB...)
+            // 为了可靠性，使用透明背景加彩色圆圈的PNG的base64（较短且视觉清晰)
+            // 真实有效的PNG base64 (74字节图片?) 但为了稳健，使用一个1x1像素？不美观，用一个简单90x90彩色图。
+            // 更优美的示例base64 (1080p? 轻量即可) 生成一个64x64带有"Base64→IMG"字样？太复杂，使用预置标准图（简单的彩虹渐变圆）
+            // 来自网络常见的测试base64，为了离线可用，直接内置一个明显示例: 纯红底白色星星过于复杂，最好直接生成dataURL：以下base64（一个蓝色方块）
+            // 为了方便代码自包含，创建一个有效的dataURL字符集:
+            const demoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGbSURBVHhe7dMxTcNAFIZhCxEJhQhRMEWWiMQSWSIKS4SUKZgikixBsgSagSVAFCDQ/xVvcpKzfev7Xr+W7U8e7/c6juPYPM9jmqaHRVG0hRDiGXyD/wPfB/4Hvg/8D3wf+B/4PvA/8H3gf3x8HHu/AF/kZUVVy5nqHVFUhH6RKu/ngKquFVV9IYRBVf2oqjtVdaeq7lTVnaq6U1V3qupOVd0pMcaHqqoQY3yoqiqEGB+qKiSqrqr6EmPcFkKILLJBCGEPQgi7JIRwCUK4BCFcghAuQQiXIIRLEMIlCOEShHAJQrgEIVyCEC5BCJcghEsQwiUI4RKEcAlCuAQhXIIQLkEIlyCESxDCJQjhEoRwCUK4BCFcghAuQQiXIIRLEMIlCOEShHAJQrgEIVyCEC5BCJcghEsQwiUI4RKEcAlCuAQhXIIQLkEIlyCESxDCJQjhEoRwCUK4BCFcghAuQQiXIIRLEMIlCOEShHAJQrgEIVyCEC5BCJcghEsQwiUI4RKEcAlCuIQ/mxBiz2IqHnEAAAAASUVORK5CYII=";
+            textarea.value = demoBase64;
+            // 自动触发转换
+            convertBtn.click();
+        }
+        
+        // 绑定事件
+        convertBtn.addEventListener('click', async () => {
+            const rawValue = textarea.value;
+            if (!rawValue.trim()) {
+                showError('请先在文本框中粘贴Base64字符串。');
+                return;
+            }
+            // 显示加载状态（临时改变状态）
+            previewStatusSpan.innerText = '⏳ 转换中...';
+            previewStatusSpan.style.background = '#fef9c3';
+            previewStatusSpan.style.color = '#854d0e';
+            await convertBase64ToImage(rawValue);
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            if (!currentBlob) {
+                showError('没有有效的图片数据，请先转换Base64');
+                return;
+            }
+            downloadImage();
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            resetAll();
+            textarea.value = '';
+        });
+        
+        loadExampleBtn.addEventListener('click', () => {
+            resetAll();
+            loadExample();
+        });
+        
+        // 页面卸载时清理ObjectURL
+        window.addEventListener('beforeunload', () => {
+            revokeCurrentImageUrl();
+        });
+        
+        // 初始清空状态确保合理
+        resetAll();
+    })();
+</script>
+</body>
+</html>
