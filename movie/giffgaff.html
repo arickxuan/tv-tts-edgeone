@@ -92,6 +92,10 @@
             <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Giffgaff OAuth PKCE 生成工具</p>
         </div>
 
+        <div class="step">
+            <h2>步骤 0: 登录官网</h2>
+        </div>
+
         
         <div class="step">
             <h2>步骤 1: 生成参数</h2>
@@ -126,6 +130,7 @@
         <div class="step">
             <h2>步骤 3: 登录并获取授权码</h2>
             <p>在授权页面登录后，浏览器会尝试打开 <code>giffgaff://auth/callback/?code=XXXXXX&state=XXXXXX</code></p>
+            <p>开发者工具查看log <code>giffgaff://auth/callback/?code=XXXXXX&state=XXXXXX</code></p>
             <p>从浏览器地址栏复制完整的回调URL，提取 <strong>code</strong> 参数值</p>
             
             <label>授权码 (Auth Code):</label>
@@ -145,6 +150,7 @@
                 <li><code>auth_code</code> ← 步骤3中的Auth Code</li>
             </ul>
             <p class="success">然后在Postman中执行 "步骤2: 交换Token" 请求！</p>
+            <p>下载地址: https://mo.arick.top/Giffgaff-swap-esim.json</p>
         </div>
     </div>
 

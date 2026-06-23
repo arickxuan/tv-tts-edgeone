@@ -5,6 +5,7 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+build.sh
 
 # testing
 /coverage
@@ -49,4 +50,3 @@ edgeone.json
 .edgeone/edge-functions/*
 !.edgeone/project.json
 .tef_dist/*
-  

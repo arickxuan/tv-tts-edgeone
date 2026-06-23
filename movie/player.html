@@ -464,6 +464,60 @@
             cursor: default;
         }
 
+
+        /* 直链列表样式 */
+        .direct-link-grid {
+            display: block;
+        }
+        .direct-link-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            overflow: hidden;
+        }
+        .direct-link-item a {
+            flex: 1;
+            color: #2ecc71;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .direct-link-item a:hover {
+            text-decoration: underline;
+            color: #27ae60;
+        }
+        .direct-link-item .ep-label {
+            background: #ff6b9d;
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .direct-link-item .ep-link-btn {
+            flex-shrink: 0;
+            padding: 4px 10px;
+            background: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .direct-link-item .ep-link-btn:hover {
+            background: #27ae60;
+        }
+
         /* 频道列表样式 */
         .channel-group-title {
             font-weight: bold;
@@ -747,6 +801,7 @@
                 <div class="selector-tabs">
                     <button class="tab active">选集</button>
                     <button class="tab">换源</button>
+                    <button class="tab">直连</button>
                 </div>
 
                 <div class="episode-range">
@@ -784,6 +839,8 @@
         let progressSaveInterval = null; // 定期保存进度的计时器
         let currentEpisodes = [];
         let currentVideoUrl = null;
+        let useIframe = false; // 是否使用iframe模式（非m3u8时启用）
+
         let videoTitle = '视频播放';
         let videoHasEnded = false;
         let autoplayEnabled = true;
@@ -797,6 +854,7 @@
         const source = urlParams.get('source');
         const index = urlParams.get('index') || '0';
         const title = urlParams.get('title') || '视频播放';
+        const directUrl = urlParams.get("url");
         let currentEpisodeIndex = parseInt(index);
 
         // 根据URL参数更新页面内容
@@ -829,9 +887,13 @@
 
         (function () {
             updatePageContent(); // 首先更新页面内容
-            init();
+            if (directUrl && directUrl.trim()) {
+                console.log("检测到url参数，直接播放:", directUrl);
+                playVideoDirectly(directUrl);
+            } else {
+                init();
+            }
         })();
-
 
         async function getVideoUrl(id, source, index) {
             let url = `/movie/detail?id=${id}&source=${source}`;
@@ -841,12 +903,14 @@
             currentEpisodes = data.episodes;
             currentVideoUrl = data.episodes[index];
 
+            // 检测是否为非m3u8（如直链mp4等），使用iframe播放
+            useIframe = currentEpisodes.every(function(u) { return !u.includes(".m3u8"); });
+
             // 更新选集显示
             updateEpisodesDisplay(data.episodes, parseInt(index));
 
             return data.episodes[index];
         }
-
         // 更新选集显示
         function updateEpisodesDisplay(episodes, currentIndex) {
             if (!episodes || !Array.isArray(episodes) || episodes.length === 0) {
@@ -911,13 +975,37 @@
             currentEpisodeIndex = episodeIndex;
             currentVideoUrl = currentEpisodes[episodeIndex];
 
-            // 更新页面标题和面包屑
-            updatePageContentForEpisode(episodeIndex);
-
             // 切换播放器视频源
-            if (art) {
+            if (useIframe) {
+                switchIframe(currentVideoUrl);
+            } else if (art) {
                 art.switchUrl(currentVideoUrl);
             }
+
+        }
+
+
+        // 渲染直链列表
+        function renderDirectLinks() {
+            const episodeGrid = document.querySelector(".episode-grid");
+
+            if (!currentEpisodes || currentEpisodes.length === 0) {
+                episodeGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #666;">暂无直链信息</div>`;
+                return;
+            }
+
+            let html = `<div class="direct-link-grid">`;
+            currentEpisodes.forEach((url, i) => {
+                const episodeLabel = `第${i + 1}集`;
+                html += `<div class="direct-link-item">`;
+                html += `<span class="ep-label">${episodeLabel}</span>`;
+                html += `<a href="${url}" target="_blank" title="${url}">${url}</a>`;
+                html += `<a class="ep-link-btn" href="${url}" target="_blank">打开</a>`;
+                html += `</div>`;
+            });
+            html += `</div>`;
+
+            episodeGrid.innerHTML = html;
         }
 
         // 搜索视频源
@@ -1053,22 +1141,24 @@
         async function init() {
             // 检查必要参数
             if (!id || !source) {
-                console.error('缺少必要参数:', { id, source, index, title });
-                showError('缺少视频ID或来源参数');
+                console.error("缺少必要参数:", { id, source, index, title });
+                showError("缺少视频ID或来源参数");
                 return;
             }
-
             try {
-                // 获取视频URL
                 let videoUrl = await getVideoUrl(id, source, index);
                 if (videoUrl) {
-                    initPlayer(videoUrl);
+                    if (useIframe) {
+                        initIframe(videoUrl);
+                    } else {
+                        initPlayer(videoUrl);
+                    }
                 } else {
-                    showError('无法获取视频地址');
+                    showError("无法获取视频地址");
                 }
             } catch (error) {
-                console.error('初始化失败:', error);
-                showError('视频加载失败: ' + error.message);
+                console.error("初始化失败:", error);
+                showError("视频加载失败: " + error.message);
             }
         }
 
@@ -1258,6 +1348,30 @@
             return filteredLines.join('\n');
         }
 
+
+
+        // 使用iframe播放视频（非m3u8时）
+        function initIframe(videoUrl) {
+            if (!videoUrl) return;
+            if (art) {
+                art.destroy();
+                art = null;
+            }
+            document.removeEventListener("keydown", handleKeyboardEvent);
+            var container = document.getElementById("player");
+            container.innerHTML = "<iframe src=\"" + videoUrl + "\" style=\"width:100%;height:100%;border:none;\" allowfullscreen referrerpolicy=\"no-referrer\"></iframe>";
+        }
+
+        // 切换iframe的src
+        function switchIframe(videoUrl) {
+            var container = document.getElementById("player");
+            var iframe = container.querySelector("iframe");
+            if (iframe) {
+                iframe.src = videoUrl;
+            } else {
+                initIframe(videoUrl);
+            }
+        }
 
         // 初始化播放器
         function initPlayer(videoUrl) {
@@ -2019,38 +2133,31 @@
         // 选集切换功能现在由动态生成的按钮处理（在 updateEpisodesDisplay 和 bindEpisodeEvents 函数中）
 
         // 标签切换功能
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function () {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", function () {
+                document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+                this.classList.add("active");
 
-                if (this.textContent === '换源') {
-                    // 切换到换源标签
-                    document.querySelector('.episode-range').style.display = 'none';
+                if (this.textContent === "换源") {
+                    document.querySelector(".episode-range").style.display = "none";
+                    document.querySelector(".episode-grid").classList.add("sources-mode");
                     updateSourcesDisplay();
+                } else if (this.textContent === "直连") {
+                    document.querySelector(".episode-range").style.display = "none";
+                    document.querySelector(".episode-grid").classList.add("sources-mode");
+                    renderDirectLinks();
                 } else {
-                    // 切换回选集标签，恢复选集显示
-                    document.querySelector('.episode-range').style.display = 'flex';
-
-                    // 移除换源模式的CSS类
-                    const episodeGrid = document.querySelector('.episode-grid');
-                    episodeGrid.classList.remove('sources-mode');
-
-                    // 使用动态选集显示功能
+                    document.querySelector(".episode-range").style.display = "flex";
+                    const episodeGrid = document.querySelector(".episode-grid");
+                    episodeGrid.classList.remove("sources-mode");
                     if (currentEpisodes && currentEpisodes.length > 0) {
                         updateEpisodesDisplay(currentEpisodes, currentEpisodeIndex);
                     } else {
-                        // 如果没有选集数据，显示加载中
-                        episodeGrid.innerHTML = `
-                            <div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #666;">
-                                正在加载选集信息...
-                            </div>
-                        `;
+                        episodeGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #666;">正在加载选集信息...</div>`;
                     }
                 }
             });
         });
-
         // 主题切换功能
         document.querySelector('.theme-toggle').addEventListener('click', function () {
             document.body.style.filter = document.body.style.filter ? '' : 'invert(1) hue-rotate(180deg)';
@@ -2345,7 +2452,7 @@
                                     <div class="channel-name">${channel.name}</div>
                                 </div>
                             </div>
-                            <button class="channel-btn" data-channel-index="${groupedChannels[group].indexOf(channel)}">播放</button>
+                            <button class="channel-btn" data-channel-index="${index}">播放</button>
                         </div>
                     `;
                 });
