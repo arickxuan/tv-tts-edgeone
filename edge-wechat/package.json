@@ -13,9 +13,12 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "fast-xml-parser": "^5.10.1",
     "firebase-admin": "^13.9.0",
+    "form-data": "^4.0.6",
     "google-auth-library": "^10.6.2",
     "ioredis": "^5.10.1",
+    "multer": "^2.2.0",
     "request-ip": "^3.3.0"
   }
 }
