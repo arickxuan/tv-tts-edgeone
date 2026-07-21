@@ -57,4 +57,8 @@ export function childrenKey(bucket, dir) {
   return d ? `tgfs:children:${bucket}/${d}` : `tgfs:children:${bucket}/`;
 }
 
+export function bucketConfigKey(bucket) {
+  return `tgfs:bucket:${bucket}`;
+}
+
 export const BUCKETS_KEY = 'tgfs:buckets';

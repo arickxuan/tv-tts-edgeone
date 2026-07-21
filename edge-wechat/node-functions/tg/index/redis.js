@@ -1,12 +1,19 @@
 import { getRedisClient } from '../redis/index.js';
+import { config } from '../config/index.js';
 import {
   normalizeKey,
   parentDir,
   baseName,
   metaKey,
   childrenKey,
+  bucketConfigKey,
   BUCKETS_KEY,
 } from '../utils/path.js';
+
+function defaultBackend() {
+  const b = String(config.storage.blobBackend || 'github').toLowerCase();
+  return b === 'telegram' || b === 'tg' ? 'telegram' : 'github';
+}
 
 function toStored(meta) {
   return {
@@ -17,6 +24,8 @@ function toStored(meta) {
     etag: meta.etag || '',
     mtime: meta.mtime || new Date().toISOString(),
     isDir: meta.isDir ? '1' : '0',
+    backend: meta.backend || '',
+    sha: meta.sha || '',
   };
 }
 
@@ -30,6 +39,8 @@ function fromStored(hash) {
     etag: hash.etag || '',
     mtime: hash.mtime || new Date().toISOString(),
     isDir: hash.isDir === '1' || hash.isDir === 1 || hash.isDir === true,
+    backend: hash.backend || '',
+    sha: hash.sha || '',
   };
 }
 
@@ -37,9 +48,48 @@ export function createRedisIndex() {
   return {
     name: 'redis',
 
-    async ensureBucket(bucket) {
+    async ensureBucket(bucket, opts = {}) {
       const redis = await getRedisClient();
       await redis.sadd(BUCKETS_KEY, bucket);
+      const key = bucketConfigKey(bucket);
+      const exists = await redis.exists(key);
+      if (!exists) {
+        await redis.hset(key, {
+          backend: opts.backend || defaultBackend(),
+          creationDate: new Date().toISOString(),
+        });
+      } else if (opts.backend) {
+        await redis.hset(key, { backend: opts.backend });
+      }
+    },
+
+    async getBucketConfig(bucket) {
+      const redis = await getRedisClient();
+      const hash = await redis.hgetall(bucketConfigKey(bucket));
+      if (!hash || !Object.keys(hash).length) {
+        return { name: bucket, backend: defaultBackend(), creationDate: '' };
+      }
+      return {
+        name: bucket,
+        backend: hash.backend || defaultBackend(),
+        creationDate: hash.creationDate || '',
+      };
+    },
+
+    async setBucketConfig(bucket, { backend } = {}) {
+      const redis = await getRedisClient();
+      await redis.sadd(BUCKETS_KEY, bucket);
+      const key = bucketConfigKey(bucket);
+      const patch = {};
+      if (backend) patch.backend = backend;
+      if (!(await redis.exists(key))) {
+        patch.creationDate = new Date().toISOString();
+        if (!patch.backend) patch.backend = defaultBackend();
+      }
+      if (Object.keys(patch).length) {
+        await redis.hset(key, patch);
+      }
+      return this.getBucketConfig(bucket);
     },
 
     async listBuckets() {
@@ -51,6 +101,7 @@ export function createRedisIndex() {
       const redis = await getRedisClient();
       await redis.srem(BUCKETS_KEY, bucket);
       await redis.del(childrenKey(bucket, ''));
+      await redis.del(bucketConfigKey(bucket));
     },
 
     async getMeta(bucket, key) {
@@ -92,9 +143,6 @@ export function createRedisIndex() {
       await redis.del(childrenKey(bucket, normalizeKey(dir)));
     },
 
-    /**
-     * Ensure ancestor directory nodes + children links exist.
-     */
     async linkPath(bucket, key) {
       const k = normalizeKey(key);
       const name = baseName(k);

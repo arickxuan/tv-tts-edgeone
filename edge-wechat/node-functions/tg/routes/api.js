@@ -16,6 +16,40 @@ router.get('/ping', (_req, res) => {
   res.send('pong');
 });
 
+router.get('/api/buckets', apiAuth, async (_req, res) => {
+  try {
+    const buckets = await storage.listBuckets();
+    const detailed = await Promise.all(
+      buckets.map(async (b) => storage.getBucket(b.name)),
+    );
+    res.json({ ok: true, buckets: detailed });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
+router.get('/api/buckets/:name', apiAuth, async (req, res) => {
+  try {
+    const cfg = await storage.getBucket(req.params.name);
+    res.json({ ok: true, ...cfg });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
+router.put('/api/buckets/:name', apiAuth, async (req, res) => {
+  try {
+    const backend = req.body?.backend || req.body?.blob;
+    if (!backend) {
+      return res.status(400).json({ error: '需要 body.backend: github|telegram' });
+    }
+    const cfg = await storage.setBucketBackend(req.params.name, backend);
+    res.json({ ok: true, ...cfg });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code });
+  }
+});
+
 router.post('/api/upload', apiAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -24,11 +58,13 @@ router.post('/api/upload', apiAuth, upload.single('file'), async (req, res) => {
     const bucket = req.body.bucket || config.storage.defaultBucket;
     let key = req.body.key || req.body.path || req.file.originalname;
     key = normalizeKey(key);
+    const backend = req.body.backend || req.query.backend || req.body.blob || req.query.blob;
     const result = await storage.putObject({
       bucket,
       key,
       body: req.file.buffer,
       contentType: req.file.mimetype || 'application/octet-stream',
+      backend,
     });
     res.json({
       ok: true,
@@ -37,6 +73,7 @@ router.post('/api/upload', apiAuth, upload.single('file'), async (req, res) => {
       etag: result.etag,
       size: result.size,
       contentType: result.contentType,
+      backend: result.backend,
       url: `/api/files/${result.key}`,
     });
   } catch (err) {

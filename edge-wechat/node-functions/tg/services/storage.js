@@ -1,11 +1,10 @@
 import crypto from 'crypto';
 import { config } from '../config/index.js';
 import { getIndexBackend } from '../index/index.js';
-import * as tg from './telegram.js';
+import { getBlobBackend, blobForMeta, normalizeBlobName, defaultBlobName } from './blob/index.js';
 import {
   normalizeKey,
   parentDir,
-  baseName,
   joinKey,
   asPrefix,
 } from '../utils/path.js';
@@ -31,16 +30,47 @@ export async function listBuckets() {
       names.push(config.storage.defaultBucket);
     }
   }
-  return names.sort().map((name) => ({
-    name,
-    creationDate: new Date(0).toISOString(),
-  }));
+  const sorted = names.sort();
+  return Promise.all(
+    sorted.map(async (name) => {
+      const cfg = await index.getBucketConfig(name);
+      return {
+        name,
+        creationDate: cfg.creationDate || new Date(0).toISOString(),
+        backend: cfg.backend || defaultBlobName(),
+      };
+    }),
+  );
 }
 
-export async function createBucket(bucket) {
+export async function createBucket(bucket, { backend } = {}) {
+  const index = getIndexBackend();
+  await index.ensureBucket(bucket, backend ? { backend } : {});
+  return index.getBucketConfig(bucket);
+}
+
+export async function getBucket(bucket) {
   const index = getIndexBackend();
   await index.ensureBucket(bucket);
-  return { name: bucket };
+  return index.getBucketConfig(bucket);
+}
+
+export async function setBucketBackend(bucket, backend) {
+  const index = getIndexBackend();
+  const name = normalizeBlobName(backend) || defaultBlobName();
+  return index.setBucketConfig(bucket, { backend: name });
+}
+
+/**
+ * Resolve upload backend: explicit override > bucket config in DB > env default.
+ */
+async function resolveBackend(bucket, override) {
+  const fromReq = normalizeBlobName(override);
+  if (fromReq) return fromReq;
+  const index = getIndexBackend();
+  await index.ensureBucket(bucket);
+  const cfg = await index.getBucketConfig(bucket);
+  return normalizeBlobName(cfg.backend) || defaultBlobName();
 }
 
 export async function deleteBucket(bucket) {
@@ -72,12 +102,14 @@ export async function getObject({ bucket, key }) {
     throw err;
   }
   if (!meta.fileId) throw notFound();
-  const body = await tg.downloadByFileId(meta.fileId);
+  const body = await blobForMeta(meta).get(meta);
   return { body, meta };
 }
 
-export async function putObject({ bucket, key, body, contentType, caption }) {
+export async function putObject({ bucket, key, body, contentType, caption, backend }) {
   const index = getIndexBackend();
+  const resolvedBackend = await resolveBackend(bucket, backend);
+  const blob = getBlobBackend(resolvedBackend);
   const k = normalizeKey(key);
   if (!k) {
     const err = new Error('Invalid key');
@@ -94,39 +126,57 @@ export async function putObject({ bucket, key, body, contentType, caption }) {
     oldMeta = null;
   }
 
-  const buf = Buffer.isBuffer(body) ? body : Buffer.from(body);
-  const filename = baseName(k) || 'file.bin';
-  const ct = contentType || 'application/octet-stream';
-  const captionText = caption || `${bucket}/${k}`;
+  // 覆盖写入同路径时，仅当目标后端相同才传 existingMeta（github 需要 sha）
+  const existingForPut =
+    oldMeta && (oldMeta.backend || '') === blob.name ? oldMeta : null;
 
-  const uploaded = await tg.uploadBuffer(buf, filename, ct, captionText);
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(body);
+  const ct = contentType || 'application/octet-stream';
+
+  const uploaded = await blob.put({
+    bucket,
+    key: k,
+    body: buf,
+    contentType: ct,
+    caption: caption || `${bucket}/${k}`,
+    existingMeta: existingForPut,
+  });
   const etag = etagOf(buf);
   const mtime = new Date().toISOString();
 
   await index.setMeta(bucket, k, {
     fileId: uploaded.fileId,
     messageId: uploaded.messageId,
-    size: uploaded.fileSize,
+    size: uploaded.size,
     contentType: ct,
     etag,
     mtime,
     isDir: false,
+    backend: uploaded.backend,
+    sha: uploaded.sha || '',
   });
   await index.linkPath(bucket, k);
 
-  if (oldMeta?.messageId && oldMeta.messageId !== uploaded.messageId) {
-    await tg.deleteMessage(oldMeta.messageId);
+  if (oldMeta && !oldMeta.isDir) {
+    const sameBlob =
+      oldMeta.backend === uploaded.backend &&
+      oldMeta.fileId === uploaded.fileId &&
+      String(oldMeta.messageId || '') === String(uploaded.messageId || '');
+    if (!sameBlob && (oldMeta.fileId || oldMeta.messageId)) {
+      await blobForMeta(oldMeta).remove(oldMeta);
+    }
   }
 
   return {
     bucket,
     key: k,
     etag,
-    size: uploaded.fileSize,
+    size: uploaded.size,
     contentType: ct,
     mtime,
     fileId: uploaded.fileId,
     messageId: uploaded.messageId,
+    backend: uploaded.backend,
   };
 }
 
@@ -161,6 +211,8 @@ export async function ensureDir({ bucket, key }) {
     etag: '',
     mtime: new Date().toISOString(),
     isDir: true,
+    backend: '',
+    sha: '',
   });
   await index.linkPath(bucket, k);
   return { bucket, key: k, isDir: true };
@@ -190,8 +242,8 @@ export async function deleteObject({ bucket, key, recursive = false }) {
       await deleteObject({ bucket, key: joinKey(k, name), recursive: true });
     }
     await index.clearChildren(bucket, k);
-  } else if (meta.messageId) {
-    await tg.deleteMessage(meta.messageId);
+  } else {
+    await blobForMeta(meta).remove(meta);
   }
 
   await index.deleteMeta(bucket, k);
@@ -199,7 +251,7 @@ export async function deleteObject({ bucket, key, recursive = false }) {
   return { deleted: true, key: k };
 }
 
-export async function copyObject({ srcBucket, srcKey, destBucket, destKey }) {
+export async function copyObject({ srcBucket, srcKey, destBucket, destKey, backend }) {
   const index = getIndexBackend();
   const src = await headObject({ bucket: srcBucket, key: srcKey });
   if (src.isDir) {
@@ -211,24 +263,72 @@ export async function copyObject({ srcBucket, srcKey, destBucket, destKey }) {
   const dk = normalizeKey(destKey);
   await index.ensureBucket(destBucket);
 
+  const srcBlob = blobForMeta(src);
+  const destBlob = getBlobBackend(await resolveBackend(destBucket, backend));
+
+  if (srcBlob.name === 'telegram' && destBlob.name === 'telegram') {
+    await index.setMeta(destBucket, dk, {
+      fileId: src.fileId,
+      messageId: src.messageId,
+      size: src.size,
+      contentType: src.contentType,
+      etag: src.etag,
+      mtime: new Date().toISOString(),
+      isDir: false,
+      backend: 'telegram',
+      sha: '',
+    });
+    await index.linkPath(destBucket, dk);
+    return { bucket: destBucket, key: dk, etag: src.etag, size: src.size, backend: 'telegram' };
+  }
+
+  const body = await srcBlob.get(src);
+  let oldDest = null;
+  try {
+    oldDest = await headObject({ bucket: destBucket, key: dk });
+  } catch {
+    oldDest = null;
+  }
+  const existingForPut =
+    oldDest && (oldDest.backend || '') === destBlob.name ? oldDest : null;
+  const uploaded = await destBlob.put({
+    bucket: destBucket,
+    key: dk,
+    body,
+    contentType: src.contentType,
+    existingMeta: existingForPut,
+  });
   await index.setMeta(destBucket, dk, {
-    fileId: src.fileId,
-    messageId: src.messageId,
-    size: src.size,
+    fileId: uploaded.fileId,
+    messageId: uploaded.messageId,
+    size: uploaded.size,
     contentType: src.contentType,
     etag: src.etag,
     mtime: new Date().toISOString(),
     isDir: false,
+    backend: uploaded.backend,
+    sha: uploaded.sha || '',
   });
   await index.linkPath(destBucket, dk);
-
-  return { bucket: destBucket, key: dk, etag: src.etag, size: src.size };
+  return { bucket: destBucket, key: dk, etag: src.etag, size: uploaded.size, backend: uploaded.backend };
 }
 
 export async function moveObject({ srcBucket, srcKey, destBucket, destKey }) {
   const index = getIndexBackend();
+  const src = await headObject({ bucket: srcBucket, key: srcKey });
   await copyObject({ srcBucket, srcKey, destBucket, destKey });
   const sk = normalizeKey(srcKey);
+
+  const dest = await headObject({ bucket: destBucket, key: destKey });
+  const sharedTelegram =
+    (src.backend || 'telegram') === 'telegram' &&
+    (dest.backend || 'telegram') === 'telegram' &&
+    src.fileId === dest.fileId;
+
+  if (!sharedTelegram) {
+    await blobForMeta(src).remove(src);
+  }
+
   await index.deleteMeta(srcBucket, sk);
   await index.unlinkPath(srcBucket, sk);
   return { bucket: destBucket, key: normalizeKey(destKey) };

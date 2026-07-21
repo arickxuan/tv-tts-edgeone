@@ -5,6 +5,11 @@ import { normalizeKey, parentDir, baseName } from '../utils/path.js';
 const BUCKETS = 'tgfs_buckets';
 const OBJECTS = 'tgfs_objects';
 
+function defaultBackend() {
+  const b = String(config.storage.blobBackend || 'github').toLowerCase();
+  return b === 'telegram' || b === 'tg' ? 'telegram' : 'github';
+}
+
 let pbInstance = null;
 let authAt = 0;
 
@@ -17,13 +22,11 @@ async function getPb() {
     pbInstance.autoCancellation(false);
   }
 
-  // Re-auth every 10 minutes
   if (Date.now() - authAt > 10 * 60 * 1000 || !pbInstance.authStore.isValid) {
     const { adminEmail, adminPassword, authToken } = config.pocketbase;
     if (authToken) {
       pbInstance.authStore.save(authToken, null);
     } else if (adminEmail && adminPassword) {
-      // PB >=0.23: admins → _superusers（admins 仍为别名）
       await pbInstance.collection('_superusers').authWithPassword(adminEmail, adminPassword);
     } else {
       throw new Error('PocketBase 需配置 POCKETBASE_AUTH_TOKEN 或 ADMIN 账号');
@@ -47,6 +50,8 @@ function fromRecord(rec) {
     etag: rec.etag || '',
     mtime: rec.mtime || new Date().toISOString(),
     isDir: !!rec.is_dir,
+    backend: rec.backend || '',
+    sha: rec.sha || '',
     _id: rec.id,
   };
 }
@@ -72,39 +77,67 @@ async function findBucket(pb, name) {
 }
 
 /**
- * PocketBase collections (create in Admin UI):
- *
- * tgfs_buckets:
- *   name (text, required, unique)
- *   creation_date (text)
- *
- * tgfs_objects:
- *   bucket (text, required)
- *   key (text, required) — full object path
- *   parent (text) — parent directory path ('' for root)
- *   name (text) — basename
- *   file_id (text)
- *   message_id (number)
- *   size (number)
- *   content_type (text)
- *   etag (text)
- *   mtime (text)
- *   is_dir (bool)
- *   unique index: (bucket, key)
+ * tgfs_buckets: name, creation_date, backend(text 可选)
+ * tgfs_objects: ... + backend, sha
  */
 export function createPocketBaseIndex() {
   return {
     name: 'pocketbase',
 
-    async ensureBucket(bucket) {
+    async ensureBucket(bucket, opts = {}) {
       const pb = await getPb();
       const existing = await findBucket(pb, bucket);
       if (!existing) {
-        await pb.collection(BUCKETS).create({
+        const payload = {
           name: bucket,
           creation_date: new Date().toISOString(),
-        });
+          backend: opts.backend || defaultBackend(),
+        };
+        try {
+          await pb.collection(BUCKETS).create(payload);
+        } catch (err) {
+          if (err?.status === 400) {
+            delete payload.backend;
+            await pb.collection(BUCKETS).create(payload);
+          } else {
+            throw err;
+          }
+        }
+      } else if (opts.backend) {
+        await this.setBucketConfig(bucket, { backend: opts.backend });
       }
+    },
+
+    async getBucketConfig(bucket) {
+      const pb = await getPb();
+      const rec = await findBucket(pb, bucket);
+      if (!rec) {
+        return { name: bucket, backend: defaultBackend(), creationDate: '' };
+      }
+      return {
+        name: rec.name,
+        backend: rec.backend || defaultBackend(),
+        creationDate: rec.creation_date || '',
+      };
+    },
+
+    async setBucketConfig(bucket, { backend } = {}) {
+      const pb = await getPb();
+      const rec = await findBucket(pb, bucket);
+      if (!rec) {
+        await this.ensureBucket(bucket, { backend });
+        return this.getBucketConfig(bucket);
+      }
+      const payload = {};
+      if (backend) payload.backend = backend;
+      if (Object.keys(payload).length) {
+        try {
+          await pb.collection(BUCKETS).update(rec.id, payload);
+        } catch (err) {
+          if (err?.status !== 400) throw err;
+        }
+      }
+      return this.getBucketConfig(bucket);
     },
 
     async listBuckets() {
@@ -142,13 +175,29 @@ export function createPocketBaseIndex() {
         etag: meta.etag || '',
         mtime: meta.mtime || new Date().toISOString(),
         is_dir: !!meta.isDir,
+        backend: meta.backend || '',
+        sha: meta.sha || '',
       };
 
       const existing = await findObject(pb, bucket, k);
-      if (existing) {
-        await pb.collection(OBJECTS).update(existing.id, payload);
-      } else {
-        await pb.collection(OBJECTS).create(payload);
+      try {
+        if (existing) {
+          await pb.collection(OBJECTS).update(existing.id, payload);
+        } else {
+          await pb.collection(OBJECTS).create(payload);
+        }
+      } catch (err) {
+        if (err?.status === 400 && (payload.backend != null || payload.sha != null)) {
+          delete payload.backend;
+          delete payload.sha;
+          if (existing) {
+            await pb.collection(OBJECTS).update(existing.id, payload);
+          } else {
+            await pb.collection(OBJECTS).create(payload);
+          }
+        } else {
+          throw err;
+        }
       }
     },
 
@@ -172,14 +221,12 @@ export function createPocketBaseIndex() {
       return list.map((r) => r.name).filter(Boolean);
     },
 
-    // Children derived from parent field; no-ops kept for interface parity
     async addChild() {},
     async removeChild() {},
     async clearChildren() {},
 
     async linkPath(bucket, key) {
       const k = normalizeKey(key);
-      // Ensure ancestor dir records exist
       let cur = parentDir(k);
       while (cur) {
         const existing = await this.getMeta(bucket, cur);
@@ -198,8 +245,6 @@ export function createPocketBaseIndex() {
       }
     },
 
-    async unlinkPath() {
-      // parent relation is on the deleted record itself
-    },
+    async unlinkPath() {},
   };
 }

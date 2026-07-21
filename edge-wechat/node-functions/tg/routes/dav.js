@@ -154,6 +154,7 @@ router.all('/:bucket/*key', async (req, res) => {
     if (req.method === 'PUT') {
       const body = req.bodyBuffer || req.rawBody || Buffer.alloc(0);
       const contentType = req.headers['content-type'] || 'application/octet-stream';
+      // backend 来自 bucket 配置（数据库），不接受 query/header
       await storage.putObject({ bucket, key, body, contentType });
       return res.status(201).end();
     }

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import path from 'path';
+import { readFileSync, existsSync } from 'fs';
 import apiRouter from './routes/api.js';
 import s3Router from './routes/s3.js';
 import davRouter from './routes/dav.js';
@@ -15,6 +17,33 @@ app.use(cors());
 // REST JSON helpers; S3/DAV capture their own raw bodies.
 app.use('/api', express.json({ limit: '2mb' }));
 app.use('/api', express.urlencoded({ extended: true }));
+
+function resolveUiHtml() {
+  const candidates = [
+    path.join('included_files', 'public', 'tg', 'index.html'),
+    path.join('public', 'tg', 'index.html'),
+    path.join(process.cwd(), 'public', 'tg', 'index.html'),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+function serveUi(_req, res) {
+  try {
+    const htmlPath = resolveUiHtml();
+    if (!htmlPath) {
+      return res.status(404).type('text/plain').send('public/tg/index.html not found');
+    }
+    res.type('html').send(readFileSync(htmlPath, 'utf8'));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+app.get('/', serveUi);
+app.get('/ui', serveUi);
 
 app.get('/ping', (_req, res) => {
   res.send('pong');

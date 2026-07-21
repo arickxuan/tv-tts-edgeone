@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TGFS · 对象存储</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0f1419;
+            --bg2: #171d25;
+            --panel: #1c2430;
+            --line: #2a3544;
+            --text: #e8eef6;
+            --muted: #8b9bb0;
+            --accent: #3dd6c6;
+            --accent-dim: rgba(61, 214, 198, 0.14);
+            --warn: #f0a050;
+            --danger: #e86a6a;
+            --ok: #5dca8a;
+            --radius: 10px;
+            --font: "Sora", system-ui, sans-serif;
+            --mono: "IBM Plex Mono", ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            color: var(--text);
+            min-height: 100vh;
+            background:
+                radial-gradient(1200px 600px at 10% -10%, rgba(61, 214, 198, 0.08), transparent 55%),
+                radial-gradient(900px 500px at 100% 0%, rgba(90, 140, 220, 0.07), transparent 50%),
+                var(--bg);
+            background-attachment: fixed;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 20px 64px;
+        }
+
+        header.top {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            font-size: clamp(1.75rem, 4vw, 2.35rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .brand span {
+            color: var(--accent);
+        }
+
+        .tagline {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-top: 6px;
+        }
+
+        .status-pill {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--muted);
+        }
+
+        .status-pill.ok {
+            color: var(--ok);
+            border-color: rgba(93, 202, 138, 0.35);
+        }
+
+        .status-pill.bad {
+            color: var(--danger);
+            border-color: rgba(232, 106, 106, 0.35);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        @media (max-width: 860px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: color-mix(in srgb, var(--panel) 92%, transparent);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+            backdrop-filter: blur(8px);
+        }
+
+        .panel h2 {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin: 10px 0 6px;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            font: inherit;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid var(--line);
+            background: var(--bg2);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            border-color: #3d4d63;
+            background: #222b38;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #06241f;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #55e0d1;
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: rgba(232, 106, 106, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            background: var(--accent-dim);
+            border-color: rgba(61, 214, 198, 0.25);
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .drop {
+            border: 1.5px dashed var(--line);
+            border-radius: var(--radius);
+            padding: 36px 20px;
+            text-align: center;
+            color: var(--muted);
+            transition: border-color 0.15s, background 0.15s;
+            cursor: pointer;
+            margin-bottom: 14px;
+        }
+
+        .drop.drag {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .drop strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .crumb {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 12px;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .crumb button {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font: inherit;
+            padding: 0;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .toolbar .grow {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        table.files {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        table.files th {
+            text-align: left;
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        table.files td {
+            padding: 11px 10px;
+            border-bottom: 1px solid rgba(42, 53, 68, 0.7);
+            vertical-align: middle;
+        }
+
+        table.files tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .name {
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            word-break: break-all;
+        }
+
+        .name.dir {
+            color: var(--accent);
+            cursor: pointer;
+            background: none;
+            border: none;
+            font: inherit;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            padding: 0;
+            text-align: left;
+        }
+
+        .badge {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+
+        .badge.gh {
+            color: #9ec5ff;
+            border-color: rgba(120, 160, 230, 0.35);
+        }
+
+        .badge.tg {
+            color: #7fd4ff;
+            border-color: rgba(80, 180, 230, 0.35);
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .preview-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(8, 12, 18, 0.78);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .preview-overlay.show {
+            display: flex;
+        }
+
+        .preview-dialog {
+            width: min(920px, 100%);
+            max-height: min(88vh, 900px);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+        }
+
+        .preview-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .preview-head .title {
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            word-break: break-all;
+            color: var(--muted);
+        }
+
+        .preview-body {
+            flex: 1;
+            overflow: auto;
+            padding: 16px;
+            background: var(--bg);
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-body img,
+        .preview-body video {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 6px;
+        }
+
+        .preview-body iframe {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            background: #fff;
+            border-radius: 6px;
+        }
+
+        .preview-body pre {
+            width: 100%;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--text);
+        }
+
+        .preview-body .unsupported {
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .msg {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .msg.show {
+            display: block;
+        }
+
+        .msg.info {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .msg.err {
+            background: rgba(232, 106, 106, 0.12);
+            color: var(--danger);
+        }
+
+        .msg.ok {
+            background: rgba(93, 202, 138, 0.12);
+            color: var(--ok);
+        }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 10px;
+            line-height: 1.45;
+        }
+
+        .bucket-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bucket-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--bg2);
+        }
+
+        .bucket-item .title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 12px;
+            font-size: 0.9rem;
+        }
+
+        .s3-box {
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--muted);
+            line-height: 1.6;
+            word-break: break-all;
+        }
+
+        .s3-box code {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="shell">
+        <header class="top">
+            <div>
+                <div class="brand">TG<span>FS</span></div>
+                <p class="tagline">上传文件 · 浏览对象 · 管理 Bucket（S3 兼容存储）</p>
+            </div>
+            <div id="connStatus" class="status-pill">未连接</div>
+        </header>
+
+        <div class="layout">
+            <aside class="panel">
+                <h2>连接</h2>
+                <label>API Base</label>
+                <input id="apiBase" placeholder="/tg 或 http://localhost:3000" />
+                <label>API Token</label>
+                <input id="apiToken" type="password" placeholder="TGFS_API_TOKEN" autocomplete="off" />
+                <label>默认 Bucket</label>
+                <input id="defaultBucket" placeholder="default" />
+                <button class="btn btn-primary btn-block" id="btnSaveConn" type="button">保存并检测</button>
+                <p class="hint">凭证仅保存在本机 localStorage。S3 协议端点见「连接信息」。</p>
+
+                <div style="margin-top: 22px">
+                    <h2>连接信息</h2>
+                    <div class="s3-box" id="endpointInfo">—</div>
+                </div>
+            </aside>
+
+            <main class="panel">
+                <div class="tabs">
+                    <button class="tab active" data-tab="upload" type="button">上传</button>
+                    <button class="tab" data-tab="browse" type="button">对象浏览</button>
+                    <button class="tab" data-tab="buckets" type="button">Buckets</button>
+                </div>
+
+                <section class="view active" id="view-upload">
+                    <div class="drop" id="dropzone">
+                        <strong>拖放文件到此处</strong>
+                        或点击选择 · 支持单文件
+                        <input type="file" id="fileInput" hidden />
+                    </div>
+                    <div class="row">
+                        <div>
+                            <label>Object Key</label>
+                            <input id="upKey" placeholder="path/to/file.bin" />
+                        </div>
+                        <div>
+                            <label>Bucket</label>
+                            <input id="upBucket" placeholder="default" />
+                        </div>
+                    </div>
+                    <label>存储后端（仅 REST 上传可选）</label>
+                    <select id="upBackend">
+                        <option value="">跟随 Bucket 配置 / 默认</option>
+                        <option value="github">github</option>
+                        <option value="telegram">telegram</option>
+                    </select>
+                    <button class="btn btn-primary btn-block" id="btnUpload" type="button" disabled>上传</button>
+                    <div class="msg" id="upMsg"></div>
+                </section>
+
+                <section class="view" id="view-browse">
+                    <div class="crumb" id="crumb"></div>
+                    <div class="toolbar">
+                        <input class="grow" id="prefixInput" placeholder="prefix / 当前路径" />
+                        <button class="btn" id="btnRefresh" type="button">刷新</button>
+                        <button class="btn" id="btnMkdir" type="button">新建目录</button>
+                    </div>
+                    <div style="overflow-x: auto">
+                        <table class="files">
+                            <thead>
+                                <tr>
+                                    <th>名称</th>
+                                    <th>大小</th>
+                                    <th>修改时间</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="fileBody">
+                                <tr>
+                                    <td colspan="4" class="empty">加载中…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="msg" id="browseMsg"></div>
+                </section>
+
+                <section class="view" id="view-buckets">
+                    <div class="toolbar">
+                        <input class="grow" id="newBucketName" placeholder="新 bucket 名称" />
+                        <select id="newBucketBackend" style="width: auto; min-width: 130px">
+                            <option value="github">github</option>
+                            <option value="telegram">telegram</option>
+                        </select>
+                        <button class="btn btn-primary" id="btnCreateBucket" type="button">创建 / 设置</button>
+                        <button class="btn" id="btnReloadBuckets" type="button">刷新</button>
+                    </div>
+                    <div class="bucket-list" id="bucketList"></div>
+                    <p class="hint">Bucket 的 backend 写入数据库；S3 / WebDAV 上传会使用该配置，不接受 query/header。</p>
+                    <div class="msg" id="bucketMsg"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="preview-overlay" id="previewOverlay" role="dialog" aria-modal="true">
+        <div class="preview-dialog">
+            <div class="preview-head">
+                <div class="title" id="previewTitle">预览</div>
+                <div class="actions">
+                    <button class="btn" type="button" id="previewCopy">复制地址</button>
+                    <button class="btn" type="button" id="previewDownload">下载</button>
+                    <button class="btn btn-ghost" type="button" id="previewClose">关闭</button>
+                </div>
+            </div>
+            <div class="preview-body" id="previewBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        const state = {
+            file: null,
+            prefix: '',
+            bucket: 'default',
+        };
+
+        function detectBase() {
+            const path = location.pathname.replace(/\/+$/, '');
+            if (path.endsWith('/tg') || path.includes('/tg/')) return '/tg';
+            return '';
+        }
+
+        function loadSettings() {
+            $('apiBase').value = localStorage.getItem('tgfs_base') ?? detectBase();
+            $('apiToken').value = localStorage.getItem('tgfs_token') || '';
+            $('defaultBucket').value = localStorage.getItem('tgfs_bucket') || 'default';
+            state.bucket = $('defaultBucket').value || 'default';
+            $('upBucket').value = state.bucket;
+            updateEndpointInfo();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('tgfs_base', $('apiBase').value.trim());
+            localStorage.setItem('tgfs_token', $('apiToken').value.trim());
+            localStorage.setItem('tgfs_bucket', $('defaultBucket').value.trim() || 'default');
+            state.bucket = localStorage.getItem('tgfs_bucket');
+            $('upBucket').value = state.bucket;
+            updateEndpointInfo();
+        }
+
+        function baseUrl() {
+            return ($('apiBase').value || '').trim().replace(/\/+$/, '');
+        }
+
+        function updateEndpointInfo() {
+            const b = baseUrl() || location.origin;
+            const origin = b.startsWith('http') ? b : `${location.origin}${b}`;
+            $('endpointInfo').innerHTML =
+                `REST <code>${origin}/api</code><br>` +
+                `S3   <code>${origin}/s3</code><br>` +
+                `DAV  <code>${origin}/dav/{bucket}/</code>`;
+        }
+
+        function authHeaders(json = false) {
+            const h = {};
+            const token = $('apiToken').value.trim();
+            if (token) h['X-API-Key'] = token;
+            if (json) h['Content-Type'] = 'application/json';
+            return h;
+        }
+
+        async function api(path, opts = {}) {
+            const url = `${baseUrl()}${path}`;
+            const res = await fetch(url, {
+                ...opts,
+                headers: { ...authHeaders(opts.json), ...(opts.headers || {}) },
+            });
+            const ct = res.headers.get('content-type') || '';
+            let data = null;
+            if (ct.includes('application/json')) data = await res.json();
+            else if (opts.raw) return res;
+            else data = await res.text();
+            if (!res.ok) {
+                const err = new Error((data && data.error) || data || res.statusText);
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
+        }
+
+        function showMsg(el, text, type = 'info') {
+            el.className = `msg show ${type}`;
+            el.textContent = text;
+        }
+
+        function clearMsg(el) {
+            el.className = 'msg';
+            el.textContent = '';
+        }
+
+        function setStatus(ok, text) {
+            const el = $('connStatus');
+            el.className = `status-pill ${ok ? 'ok' : 'bad'}`;
+            el.textContent = text;
+        }
+
+        function formatSize(n) {
+            if (n == null || n === '') return '—';
+            const u = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            let v = Number(n);
+            while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+            return `${v < 10 && i ? v.toFixed(1) : Math.round(v)} ${u[i]}`;
+        }
+
+        function formatTime(iso) {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleString();
+            } catch {
+                return iso;
+            }
+        }
+
+        /* Tabs */
+        document.querySelectorAll('.tab').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+                document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+                btn.classList.add('active');
+                $(`view-${btn.dataset.tab}`).classList.add('active');
+                if (btn.dataset.tab === 'browse') refreshList();
+                if (btn.dataset.tab === 'buckets') loadBuckets();
+            });
+        });
+
+        /* Connection */
+        $('btnSaveConn').addEventListener('click', async () => {
+            saveSettings();
+            try {
+                const t = await fetch(`${baseUrl()}/ping`).then((r) => r.text());
+                if (t.trim() !== 'pong') throw new Error(t || 'ping failed');
+                await api('/api/buckets');
+                setStatus(true, '已连接');
+                showMsg($('upMsg'), '连接成功', 'ok');
+            } catch (e) {
+                setStatus(false, '连接失败');
+                showMsg($('upMsg'), e.message || String(e), 'err');
+            }
+        });
+
+        /* Upload */
+        const drop = $('dropzone');
+        const fileInput = $('fileInput');
+
+        drop.addEventListener('click', () => fileInput.click());
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            drop.classList.remove('drag');
+            if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) setFile(fileInput.files[0]);
+        });
+
+        function setFile(file) {
+            state.file = file;
+            $('upKey').value = $('upKey').value || file.name;
+            drop.querySelector('strong').textContent = file.name;
+            drop.childNodes[2].textContent = ` ${formatSize(file.size)} · 点击更换`;
+            $('btnUpload').disabled = false;
+        }
+
+        $('btnUpload').addEventListener('click', async () => {
+            if (!state.file) return;
+            clearMsg($('upMsg'));
+            $('btnUpload').disabled = true;
+            const fd = new FormData();
+            fd.append('file', state.file);
+            fd.append('key', $('upKey').value.trim() || state.file.name);
+            fd.append('bucket', $('upBucket').value.trim() || state.bucket);
+            const backend = $('upBackend').value;
+            if (backend) fd.append('backend', backend);
+
+            try {
+                const data = await api('/api/upload', { method: 'POST', body: fd });
+                showMsg(
+                    $('upMsg'),
+                    `已上传 ${data.key} · ${formatSize(data.size)} · backend=${data.backend}`,
+                    'ok',
+                );
+                state.prefix = '';
+                $('prefixInput').value = '';
+            } catch (e) {
+                showMsg($('upMsg'), e.message || String(e), 'err');
+            } finally {
+                $('btnUpload').disabled = !state.file;
+            }
+        });
+
+        /* Browse */
+        function renderCrumb() {
+            const parts = state.prefix.split('/').filter(Boolean);
+            let html = `<button type="button" data-p="">${state.bucket}</button>`;
+            let acc = '';
+            for (const p of parts) {
+                acc += (acc ? '/' : '') + p;
+                const path = acc + '/';
+                html += ` <span>/</span> <button type="button" data-p="${path}">${p}</button>`;
+            }
+            $('crumb').innerHTML = html;
+            $('crumb').querySelectorAll('button').forEach((b) => {
+                b.addEventListener('click', () => {
+                    state.prefix = b.dataset.p || '';
+                    $('prefixInput').value = state.prefix;
+                    refreshList();
+                });
+            });
+        }
+
+        async function refreshList() {
+            clearMsg($('browseMsg'));
+            state.bucket = $('upBucket').value.trim() || $('defaultBucket').value.trim() || 'default';
+            state.prefix = $('prefixInput').value.trim();
+            renderCrumb();
+            $('fileBody').innerHTML = `<tr><td colspan="4" class="empty">加载中…</td></tr>`;
+            try {
+                const q = new URLSearchParams({
+                    bucket: state.bucket,
+                    prefix: state.prefix,
+                    delimiter: '/',
+                });
+                const data = await api(`/api/list?${q}`);
+                const rows = [];
+
+                for (const p of data.commonPrefixes || []) {
+                    const name = p.replace(state.prefix, '').replace(/\/$/, '');
+                    rows.push(`
+            <tr>
+              <td><button class="name dir" data-prefix="${p}">📁 ${name}/</button></td>
+              <td>—</td>
+              <td>—</td>
+              <td class="actions">
+                <button class="btn btn-danger btn-sm" data-del-prefix="${p}">删除</button>
+              </td>
+            </tr>`);
+                }
+
+                for (const c of data.contents || []) {
+                    const name = c.key.replace(state.prefix, '');
+                    rows.push(`
+            <tr>
+              <td class="name">📄 ${name}</td>
+              <td>${formatSize(c.size)}</td>
+              <td>${formatTime(c.lastModified)}</td>
+              <td class="actions">
+                <button class="btn btn-ghost" data-preview="${c.key}">预览</button>
+                <button class="btn btn-ghost" data-copy="${c.key}">复制地址</button>
+                <button class="btn btn-ghost" data-dl="${c.key}">下载</button>
+                <button class="btn btn-danger" data-del="${c.key}">删除</button>
+              </td>
+            </tr>`);
+                }
+
+                $('fileBody').innerHTML = rows.length
+                    ? rows.join('')
+                    : `<tr><td colspan="4" class="empty">空目录</td></tr>`;
+
+                $('fileBody').querySelectorAll('[data-prefix]').forEach((el) => {
+                    el.addEventListener('click', () => {
+                        state.prefix = el.dataset.prefix;
+                        $('prefixInput').value = state.prefix;
+                        refreshList();
+                    });
+                });
+                $('fileBody').querySelectorAll('[data-preview]').forEach((el) => {
+                    el.addEventListener('click', () => previewKey(el.dataset.preview));
+                });
+                $('fileBody').querySelectorAll('[data-copy]').forEach((el) => {
+                    el.addEventListener('click', () => copyFileUrl(el.dataset.copy, el));
+                });
+                $('fileBody').querySelectorAll('[data-dl]').forEach((el) => {
+                    el.addEventListener('click', () => downloadKey(el.dataset.dl));
+                });
+                $('fileBody').querySelectorAll('[data-del]').forEach((el) => {
+                    el.addEventListener('click', () => deleteKey(el.dataset.del));
+                });
+                $('fileBody').querySelectorAll('[data-del-prefix]').forEach((el) => {
+                    el.addEventListener('click', () => deleteKey(el.dataset.delPrefix.replace(/\/$/, ''), true));
+                });
+            } catch (e) {
+                $('fileBody').innerHTML = `<tr><td colspan="4" class="empty">加载失败</td></tr>`;
+                showMsg($('browseMsg'), e.message || String(e), 'err');
+            }
+        }
+
+        let previewObjectUrl = null;
+        let previewKeyName = '';
+
+        function closePreview() {
+            const overlay = $('previewOverlay');
+            overlay.classList.remove('show');
+            $('previewBody').innerHTML = '';
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = null;
+            }
+            previewKeyName = '';
+        }
+
+        function extOf(key) {
+            const name = (key.split('/').pop() || '').toLowerCase();
+            const i = name.lastIndexOf('.');
+            return i >= 0 ? name.slice(i + 1) : '';
+        }
+
+        async function previewKey(key) {
+            clearMsg($('browseMsg'));
+            const body = $('previewBody');
+            $('previewTitle').textContent = key;
+            body.innerHTML = '<div class="unsupported">加载中…</div>';
+            $('previewOverlay').classList.add('show');
+            previewKeyName = key;
+
+            try {
+                const q = new URLSearchParams({ bucket: state.bucket });
+                const res = await api(`/api/files/${encodeURI(key)}?${q}`, { raw: true });
+                const blob = await res.blob();
+                if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = URL.createObjectURL(blob);
+
+                const type = (blob.type || '').toLowerCase();
+                const ext = extOf(key);
+                const isImage = type.startsWith('image/') || /^(png|jpe?g|gif|webp|svg|bmp|ico)$/.test(ext);
+                const isVideo = type.startsWith('video/') || /^(mp4|webm|ogg|mov)$/.test(ext);
+                const isAudio = type.startsWith('audio/') || /^(mp3|wav|ogg|m4a|flac)$/.test(ext);
+                const isPdf = type === 'application/pdf' || ext === 'pdf';
+                const isText =
+                    type.startsWith('text/') ||
+                    type.includes('json') ||
+                    type.includes('xml') ||
+                    type.includes('javascript') ||
+                    /^(txt|md|json|xml|csv|log|js|ts|css|html|yml|yaml|toml|ini|sh|env)$/.test(ext);
+
+                if (isImage) {
+                    body.innerHTML = `<img src="${previewObjectUrl}" alt="${key}" />`;
+                } else if (isVideo) {
+                    body.innerHTML = `<video src="${previewObjectUrl}" controls autoplay></video>`;
+                } else if (isAudio) {
+                    body.innerHTML = `<audio src="${previewObjectUrl}" controls autoplay style="width:100%"></audio>`;
+                } else if (isPdf) {
+                    body.innerHTML = `<iframe src="${previewObjectUrl}" title="${key}"></iframe>`;
+                } else if (isText && blob.size <= 2 * 1024 * 1024) {
+                    const text = await blob.text();
+                    const pre = document.createElement('pre');
+                    pre.textContent = text;
+                    body.innerHTML = '';
+                    body.appendChild(pre);
+                } else {
+                    body.innerHTML = `
+            <div class="unsupported">
+              此类型暂不支持内嵌预览<br>
+              <span style="font-family:var(--mono);font-size:0.78rem">${type || ext || 'unknown'}</span><br><br>
+              可直接下载查看
+            </div>`;
+                }
+            } catch (e) {
+                closePreview();
+                showMsg($('browseMsg'), e.message || String(e), 'err');
+            }
+        }
+
+        $('previewClose').addEventListener('click', closePreview);
+        $('previewCopy').addEventListener('click', () => {
+            if (previewKeyName) copyFileUrl(previewKeyName);
+        });
+        $('previewOverlay').addEventListener('click', (e) => {
+            if (e.target === $('previewOverlay')) closePreview();
+        });
+        $('previewDownload').addEventListener('click', () => {
+            if (previewKeyName) downloadKey(previewKeyName);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && $('previewOverlay').classList.contains('show')) {
+                closePreview();
+            }
+        });
+
+        function fileUrl(key, bucket = state.bucket) {
+            const b = baseUrl();
+            const origin = b.startsWith('http') ? b : `${location.origin}${b}`;
+            const q = new URLSearchParams({ bucket: bucket || 'default' });
+            // encode each path segment so nested keys stay readable
+            const path = String(key)
+                .split('/')
+                .filter(Boolean)
+                .map((s) => encodeURIComponent(s))
+                .join('/');
+            return `${origin}/api/files/${path}?${q}`;
+        }
+
+        async function copyText(text) {
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch {
+                // fall through
+            }
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        }
+
+        async function copyFileUrl(key, btn) {
+            const url = fileUrl(key);
+            const ok = await copyText(url);
+            if (ok) {
+                showMsg($('browseMsg'), `已复制: ${url}`, 'ok');
+                if (btn) {
+                    const old = btn.textContent;
+                    btn.textContent = '已复制';
+                    setTimeout(() => { btn.textContent = old; }, 1200);
+                }
+            } else {
+                showMsg($('browseMsg'), `复制失败，请手动复制: ${url}`, 'err');
+            }
+        }
+
+        async function downloadKey(key) {
+            try {
+                const q = new URLSearchParams({ bucket: state.bucket });
+                const res = await api(`/api/files/${encodeURI(key)}?${q}`, { raw: true });
+                const blob = await res.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = key.split('/').pop() || 'file';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
+                showMsg($('browseMsg'), e.message || String(e), 'err');
+            }
+        }
+
+        async function deleteKey(key, recursive = false) {
+            if (!confirm(`删除 ${key}${recursive ? '（及子内容）' : ''}？`)) return;
+            try {
+                const q = new URLSearchParams({
+                    bucket: state.bucket,
+                    recursive: recursive ? '1' : '0',
+                });
+                await api(`/api/files/${encodeURI(key)}?${q}`, { method: 'DELETE' });
+                showMsg($('browseMsg'), `已删除 ${key}`, 'ok');
+                refreshList();
+            } catch (e) {
+                showMsg($('browseMsg'), e.message || String(e), 'err');
+            }
+        }
+
+        $('btnRefresh').addEventListener('click', refreshList);
+        $('prefixInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') refreshList();
+        });
+
+        $('btnMkdir').addEventListener('click', async () => {
+            const name = prompt('目录名（相对当前路径）');
+            if (!name) return;
+            const key = [state.prefix.replace(/\/$/, ''), name.replace(/^\/+|\/+$/g, '')]
+                .filter(Boolean)
+                .join('/');
+            try {
+                const q = new URLSearchParams({ bucket: state.bucket });
+                await api(`/api/mkdir/${encodeURI(key)}?${q}`, { method: 'PUT' });
+                showMsg($('browseMsg'), `已创建 ${key}`, 'ok');
+                refreshList();
+            } catch (e) {
+                showMsg($('browseMsg'), e.message || String(e), 'err');
+            }
+        });
+
+        /* Buckets */
+        async function loadBuckets() {
+            clearMsg($('bucketMsg'));
+            $('bucketList').innerHTML = '<div class="empty">加载中…</div>';
+            try {
+                const data = await api('/api/buckets');
+                const list = data.buckets || [];
+                if (!list.length) {
+                    $('bucketList').innerHTML = '<div class="empty">暂无 bucket</div>';
+                    return;
+                }
+                $('bucketList').innerHTML = list.map((b) => `
+          <div class="bucket-item">
+            <div>
+              <div class="title">${b.name}</div>
+              <span class="badge ${b.backend === 'telegram' ? 'tg' : 'gh'}">${b.backend || '—'}</span>
+            </div>
+            <div class="actions">
+              <select data-bucket="${b.name}" class="bucket-backend">
+                <option value="github" ${b.backend === 'github' ? 'selected' : ''}>github</option>
+                <option value="telegram" ${b.backend === 'telegram' ? 'selected' : ''}>telegram</option>
+              </select>
+              <button class="btn" type="button" data-use="${b.name}">使用</button>
+            </div>
+          </div>
+        `).join('');
+
+                $('bucketList').querySelectorAll('.bucket-backend').forEach((sel) => {
+                    sel.addEventListener('change', async () => {
+                        try {
+                            await api(`/api/buckets/${encodeURIComponent(sel.dataset.bucket)}`, {
+                                method: 'PUT',
+                                json: true,
+                                body: JSON.stringify({ backend: sel.value }),
+                            });
+                            showMsg($('bucketMsg'), `${sel.dataset.bucket} → ${sel.value}`, 'ok');
+                            loadBuckets();
+                        } catch (e) {
+                            showMsg($('bucketMsg'), e.message || String(e), 'err');
+                        }
+                    });
+                });
+
+                $('bucketList').querySelectorAll('[data-use]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        state.bucket = btn.dataset.use;
+                        $('upBucket').value = state.bucket;
+                        $('defaultBucket').value = state.bucket;
+                        saveSettings();
+                        showMsg($('bucketMsg'), `当前 bucket: ${state.bucket}`, 'ok');
+                    });
+                });
+            } catch (e) {
+                $('bucketList').innerHTML = '<div class="empty">加载失败</div>';
+                showMsg($('bucketMsg'), e.message || String(e), 'err');
+            }
+        }
+
+        $('btnReloadBuckets').addEventListener('click', loadBuckets);
+        $('btnCreateBucket').addEventListener('click', async () => {
+            const name = $('newBucketName').value.trim();
+            if (!name) {
+                showMsg($('bucketMsg'), '请输入 bucket 名称', 'err');
+                return;
+            }
+            try {
+                await api(`/api/buckets/${encodeURIComponent(name)}`, {
+                    method: 'PUT',
+                    json: true,
+                    body: JSON.stringify({ backend: $('newBucketBackend').value }),
+                });
+                $('newBucketName').value = '';
+                showMsg($('bucketMsg'), `已设置 ${name}`, 'ok');
+                loadBuckets();
+            } catch (e) {
+                showMsg($('bucketMsg'), e.message || String(e), 'err');
+            }
+        });
+
+        /* init */
+        loadSettings();
+        (async () => {
+            try {
+                const t = await fetch(`${baseUrl()}/ping`).then((r) => r.text());
+                if (t.trim() === 'pong') {
+                    setStatus(true, '在线');
+                } else {
+                    setStatus(false, '异常');
+                }
+            } catch {
+                setStatus(false, '离线');
+            }
+        })();
+    </script>
+</body>
+
+</html>

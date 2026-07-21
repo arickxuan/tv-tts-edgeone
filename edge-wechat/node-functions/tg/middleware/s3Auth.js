@@ -219,7 +219,7 @@ export function s3Auth(req, res, next) {
           return next();
         }
       }
-      console.warn('SigV4 mismatch', { canonicalRequest, stringToSign, expected, signature });
+      console.warn('SigV4 mismatch');
       res.status(403).type('application/xml').send(
         s3Error({
           code: 'SignatureDoesNotMatch',

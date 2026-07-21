@@ -31,13 +31,28 @@ export const config = {
     adminPassword: process.env.POCKETBASE_ADMIN_PASSWORD || '',
     authToken: process.env.POCKETBASE_AUTH_TOKEN || '',
   },
+  github: {
+    token: process.env.GITHUB_TOKEN || '',
+    owner: process.env.GITHUB_OWNER || '',
+    repo: process.env.GITHUB_REPO || '',
+    branch: process.env.GITHUB_BRANCH || 'main',
+    // 空字符串表示无前缀；未设置时默认 tgfs
+    pathPrefix: process.env.GITHUB_PATH_PREFIX !== undefined
+      ? process.env.GITHUB_PATH_PREFIX
+      : 'tgfs',
+    apiBase: process.env.GITHUB_API_BASE || 'https://api.github.com',
+    // Contents API 实际上限约 100MB
+    maxUploadBytes: Number(process.env.GITHUB_MAX_UPLOAD_BYTES || 100 * 1024 * 1024),
+  },
   api: {
     token: process.env.TGFS_API_TOKEN || '',
   },
   storage: {
     defaultBucket: process.env.TGFS_DEFAULT_BUCKET || 'default',
-    // redis | pocketbase  （空则：有 Redis URI 用 redis，否则有 PB URL 用 pocketbase）
+    // redis | pocketbase
     indexBackend: process.env.TGFS_INDEX_BACKEND || '',
+    // telegram | github；空则默认 github。上传可用参数 backend 覆盖
+    blobBackend: process.env.TGFS_BLOB_BACKEND || 'github',
   },
   s3: {
     accessKeyId: process.env.S3_ACCESS_KEY_ID || '',

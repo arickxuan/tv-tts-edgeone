@@ -23,7 +23,6 @@ export function getIndexBackend() {
     cached = createRedisIndex();
   }
 
-  console.log(`TGFS index backend: ${cached.name}`);
   return cached;
 }
 

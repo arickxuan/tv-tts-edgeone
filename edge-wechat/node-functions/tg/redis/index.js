@@ -37,7 +37,6 @@ export async function getRedisClient() {
 
     try {
       await redisClient.ping();
-      console.log('Redis 连接成功');
     } catch (error) {
       console.error('Redis 连接失败:', error.message);
       redisClient = null;
