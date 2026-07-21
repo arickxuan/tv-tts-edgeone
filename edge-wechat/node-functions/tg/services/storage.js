@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { getRedisClient } from '../redis/index.js';
 import { config } from '../config/index.js';
+import { getIndexBackend } from '../index/index.js';
 import * as tg from './telegram.js';
 import {
   normalizeKey,
@@ -8,73 +8,28 @@ import {
   baseName,
   joinKey,
   asPrefix,
-  metaKey,
-  childrenKey,
-  BUCKETS_KEY,
 } from '../utils/path.js';
 
 function etagOf(buf) {
   return crypto.createHash('md5').update(buf).digest('hex');
 }
 
-function parseMeta(hash) {
-  if (!hash || !Object.keys(hash).length) return null;
-  return {
-    fileId: hash.fileId || '',
-    messageId: hash.messageId ? Number(hash.messageId) : null,
-    size: Number(hash.size || 0),
-    contentType: hash.contentType || 'application/octet-stream',
-    etag: hash.etag || '',
-    mtime: hash.mtime || new Date().toISOString(),
-    isDir: hash.isDir === '1' || hash.isDir === 1 || hash.isDir === true,
-  };
-}
-
-async function ensureBucket(redis, bucket) {
-  await redis.sadd(BUCKETS_KEY, bucket);
-}
-
-async function linkChild(redis, bucket, key) {
-  const name = baseName(key);
-  if (!name) return;
-  const parent = parentDir(key);
-  await redis.sadd(childrenKey(bucket, parent), name);
-
-  let cur = parent;
-  while (cur) {
-    const mk = metaKey(bucket, cur);
-    const exists = await redis.exists(mk);
-    if (!exists) {
-      await redis.hset(mk, {
-        isDir: '1',
-        size: '0',
-        contentType: 'application/x-directory',
-        etag: '',
-        mtime: new Date().toISOString(),
-        fileId: '',
-        messageId: '',
-      });
-    }
-    const pname = baseName(cur);
-    const pparent = parentDir(cur);
-    await redis.sadd(childrenKey(bucket, pparent), pname);
-    cur = pparent;
-  }
-}
-
-async function unlinkChild(redis, bucket, key) {
-  const name = baseName(key);
-  if (!name) return;
-  const parent = parentDir(key);
-  await redis.srem(childrenKey(bucket, parent), name);
+function notFound() {
+  const err = new Error('NoSuchKey');
+  err.code = 'NoSuchKey';
+  err.status = 404;
+  return err;
 }
 
 export async function listBuckets() {
-  const redis = await getRedisClient();
-  const names = await redis.smembers(BUCKETS_KEY);
+  const index = getIndexBackend();
+  let names = await index.listBuckets();
   if (!names.includes(config.storage.defaultBucket)) {
-    await redis.sadd(BUCKETS_KEY, config.storage.defaultBucket);
-    names.push(config.storage.defaultBucket);
+    await index.ensureBucket(config.storage.defaultBucket);
+    names = await index.listBuckets();
+    if (!names.includes(config.storage.defaultBucket)) {
+      names.push(config.storage.defaultBucket);
+    }
   }
   return names.sort().map((name) => ({
     name,
@@ -83,35 +38,28 @@ export async function listBuckets() {
 }
 
 export async function createBucket(bucket) {
-  const redis = await getRedisClient();
-  await ensureBucket(redis, bucket);
+  const index = getIndexBackend();
+  await index.ensureBucket(bucket);
   return { name: bucket };
 }
 
 export async function deleteBucket(bucket) {
-  const redis = await getRedisClient();
-  const children = await redis.smembers(childrenKey(bucket, ''));
+  const index = getIndexBackend();
+  const children = await index.listChildNames(bucket, '');
   if (children.length > 0) {
     const err = new Error('BucketNotEmpty');
     err.code = 'BucketNotEmpty';
     err.status = 409;
     throw err;
   }
-  await redis.srem(BUCKETS_KEY, bucket);
-  await redis.del(childrenKey(bucket, ''));
+  await index.deleteBucket(bucket);
 }
 
 export async function headObject({ bucket, key }) {
-  const redis = await getRedisClient();
+  const index = getIndexBackend();
   const k = normalizeKey(key);
-  const hash = await redis.hgetall(metaKey(bucket, k));
-  const meta = parseMeta(hash);
-  if (!meta) {
-    const err = new Error('NoSuchKey');
-    err.code = 'NoSuchKey';
-    err.status = 404;
-    throw err;
-  }
+  const meta = await index.getMeta(bucket, k);
+  if (!meta) throw notFound();
   return { ...meta, key: k, bucket };
 }
 
@@ -123,18 +71,13 @@ export async function getObject({ bucket, key }) {
     err.status = 400;
     throw err;
   }
-  if (!meta.fileId) {
-    const err = new Error('NoSuchKey');
-    err.code = 'NoSuchKey';
-    err.status = 404;
-    throw err;
-  }
+  if (!meta.fileId) throw notFound();
   const body = await tg.downloadByFileId(meta.fileId);
   return { body, meta };
 }
 
 export async function putObject({ bucket, key, body, contentType, caption }) {
-  const redis = await getRedisClient();
+  const index = getIndexBackend();
   const k = normalizeKey(key);
   if (!k) {
     const err = new Error('Invalid key');
@@ -142,7 +85,7 @@ export async function putObject({ bucket, key, body, contentType, caption }) {
     throw err;
   }
 
-  await ensureBucket(redis, bucket);
+  await index.ensureBucket(bucket);
 
   let oldMeta = null;
   try {
@@ -160,16 +103,16 @@ export async function putObject({ bucket, key, body, contentType, caption }) {
   const etag = etagOf(buf);
   const mtime = new Date().toISOString();
 
-  await redis.hset(metaKey(bucket, k), {
+  await index.setMeta(bucket, k, {
     fileId: uploaded.fileId,
-    messageId: String(uploaded.messageId),
-    size: String(uploaded.fileSize),
+    messageId: uploaded.messageId,
+    size: uploaded.fileSize,
     contentType: ct,
     etag,
     mtime,
-    isDir: '0',
+    isDir: false,
   });
-  await linkChild(redis, bucket, k);
+  await index.linkPath(bucket, k);
 
   if (oldMeta?.messageId && oldMeta.messageId !== uploaded.messageId) {
     await tg.deleteMessage(oldMeta.messageId);
@@ -188,14 +131,14 @@ export async function putObject({ bucket, key, body, contentType, caption }) {
 }
 
 export async function ensureDir({ bucket, key }) {
-  const redis = await getRedisClient();
+  const index = getIndexBackend();
   const k = normalizeKey(key);
   if (!k) {
-    await ensureBucket(redis, bucket);
+    await index.ensureBucket(bucket);
     return { bucket, key: '', isDir: true };
   }
 
-  await ensureBucket(redis, bucket);
+  await index.ensureBucket(bucket);
 
   let existing = null;
   try {
@@ -210,21 +153,21 @@ export async function ensureDir({ bucket, key }) {
     throw err;
   }
 
-  await redis.hset(metaKey(bucket, k), {
+  await index.setMeta(bucket, k, {
     fileId: '',
-    messageId: '',
-    size: '0',
+    messageId: null,
+    size: 0,
     contentType: 'application/x-directory',
     etag: '',
     mtime: new Date().toISOString(),
-    isDir: '1',
+    isDir: true,
   });
-  await linkChild(redis, bucket, k);
+  await index.linkPath(bucket, k);
   return { bucket, key: k, isDir: true };
 }
 
 export async function deleteObject({ bucket, key, recursive = false }) {
-  const redis = await getRedisClient();
+  const index = getIndexBackend();
   const k = normalizeKey(key);
 
   let meta;
@@ -236,7 +179,7 @@ export async function deleteObject({ bucket, key, recursive = false }) {
   }
 
   if (meta.isDir) {
-    const kids = await redis.smembers(childrenKey(bucket, k));
+    const kids = await index.listChildNames(bucket, k);
     if (kids.length && !recursive) {
       const err = new Error('DirectoryNotEmpty');
       err.code = 'DirectoryNotEmpty';
@@ -246,17 +189,18 @@ export async function deleteObject({ bucket, key, recursive = false }) {
     for (const name of kids) {
       await deleteObject({ bucket, key: joinKey(k, name), recursive: true });
     }
-    await redis.del(childrenKey(bucket, k));
+    await index.clearChildren(bucket, k);
   } else if (meta.messageId) {
     await tg.deleteMessage(meta.messageId);
   }
 
-  await redis.del(metaKey(bucket, k));
-  await unlinkChild(redis, bucket, k);
+  await index.deleteMeta(bucket, k);
+  await index.unlinkPath(bucket, k);
   return { deleted: true, key: k };
 }
 
 export async function copyObject({ srcBucket, srcKey, destBucket, destKey }) {
+  const index = getIndexBackend();
   const src = await headObject({ bucket: srcBucket, key: srcKey });
   if (src.isDir) {
     const err = new Error('Cannot copy directory with copyObject');
@@ -264,36 +208,32 @@ export async function copyObject({ srcBucket, srcKey, destBucket, destKey }) {
     throw err;
   }
 
-  const redis = await getRedisClient();
   const dk = normalizeKey(destKey);
-  await ensureBucket(redis, destBucket);
+  await index.ensureBucket(destBucket);
 
-  await redis.hset(metaKey(destBucket, dk), {
+  await index.setMeta(destBucket, dk, {
     fileId: src.fileId,
-    messageId: String(src.messageId || ''),
-    size: String(src.size),
+    messageId: src.messageId,
+    size: src.size,
     contentType: src.contentType,
     etag: src.etag,
     mtime: new Date().toISOString(),
-    isDir: '0',
+    isDir: false,
   });
-  await linkChild(redis, destBucket, dk);
+  await index.linkPath(destBucket, dk);
 
   return { bucket: destBucket, key: dk, etag: src.etag, size: src.size };
 }
 
 export async function moveObject({ srcBucket, srcKey, destBucket, destKey }) {
+  const index = getIndexBackend();
   await copyObject({ srcBucket, srcKey, destBucket, destKey });
-  const redis = await getRedisClient();
   const sk = normalizeKey(srcKey);
-  await redis.del(metaKey(srcBucket, sk));
-  await unlinkChild(redis, srcBucket, sk);
+  await index.deleteMeta(srcBucket, sk);
+  await index.unlinkPath(srcBucket, sk);
   return { bucket: destBucket, key: normalizeKey(destKey) };
 }
 
-/**
- * List objects under prefix. delimiter '/' yields CommonPrefixes.
- */
 export async function listObjects({
   bucket,
   prefix = '',
@@ -301,8 +241,8 @@ export async function listObjects({
   maxKeys = 1000,
   continuationToken = '',
 }) {
-  const redis = await getRedisClient();
-  await ensureBucket(redis, bucket);
+  const index = getIndexBackend();
+  await index.ensureBucket(bucket);
 
   const pfx = prefix ? normalizeKey(prefix) : '';
   const collected = [];
@@ -323,7 +263,7 @@ export async function listObjects({
       }
     }
 
-    const names = await redis.smembers(childrenKey(bucket, listDir));
+    const names = await index.listChildNames(bucket, listDir);
     for (const name of names.sort()) {
       const full = joinKey(listDir, name);
       if (pfx && !prefix.endsWith('/')) {
@@ -350,7 +290,7 @@ export async function listObjects({
     }
   } else {
     async function walkAll(dir) {
-      const names = await redis.smembers(childrenKey(bucket, dir));
+      const names = await index.listChildNames(bucket, dir);
       for (const name of names.sort()) {
         const full = joinKey(dir, name);
         let meta;
@@ -396,9 +336,9 @@ export async function listObjects({
 }
 
 export async function listChildren({ bucket, key }) {
-  const redis = await getRedisClient();
+  const index = getIndexBackend();
   const k = normalizeKey(key);
-  const names = await redis.smembers(childrenKey(bucket, k));
+  const names = await index.listChildNames(bucket, k);
   const items = [];
   for (const name of names.sort()) {
     const full = joinKey(k, name);

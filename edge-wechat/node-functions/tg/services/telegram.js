@@ -6,7 +6,14 @@ function apiBase() {
   if (!config.tg.botToken) {
     throw new Error('TG_BOT_TOKEN 未配置');
   }
-  return `https://api.telegram.org/bot${config.tg.botToken}`;
+  return `${config.tg.apiBase}/bot${config.tg.botToken}`;
+}
+
+function fileBase() {
+  if (!config.tg.botToken) {
+    throw new Error('TG_BOT_TOKEN 未配置');
+  }
+  return `${config.tg.apiBase}/file/bot${config.tg.botToken}`;
 }
 
 /**
@@ -75,7 +82,7 @@ export async function downloadByFileId(fileId) {
     throw err;
   }
 
-  const url = `https://api.telegram.org/file/bot${config.tg.botToken}/${filePath}`;
+  const url = `${fileBase()}/${filePath}`;
   const { data } = await axios.get(url, {
     responseType: 'arraybuffer',
     timeout: 110000,
