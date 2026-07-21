@@ -3,6 +3,7 @@ import multer from 'multer';
 import { apiAuth } from '../middleware/apiAuth.js';
 import { config } from '../config/index.js';
 import * as storage from '../services/storage.js';
+import { registerUser } from '../services/users.js';
 import { normalizeKey } from '../utils/path.js';
 
 const upload = multer({
@@ -16,6 +17,23 @@ router.get('/ping', (_req, res) => {
   res.send('pong');
 });
 
+/** 注册 PocketBase 用户（无需 API Token） */
+router.post('/api/users/reg', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: '需要 email 和 password' });
+    }
+    const data = await registerUser(String(email), String(password));
+    res.json({ ok: true, ...data });
+  } catch (err) {
+    const status = err.status || 500;
+    if (err.data && typeof err.data === 'object') {
+      return res.status(status).json(err.data);
+    }
+    res.status(status).json({ error: err.message, code: err.code });
+  }
+});
 router.get('/api/buckets', apiAuth, async (_req, res) => {
   try {
     const buckets = await storage.listBuckets();

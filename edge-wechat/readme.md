@@ -8,7 +8,7 @@
 
 ## 鉴权
 
-除下载外，写操作需携带 API Token（环境变量 `TGFS_API_TOKEN`）：
+除下载与用户注册外，写操作需携带 API Token（环境变量 `TGFS_API_TOKEN`）：
 
 ```http
 X-API-Key: <TGFS_API_TOKEN>
@@ -96,6 +96,7 @@ http://localhost:3000/api/files/IMG202607141511381.jpg?bucket=github
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| `POST` | `/api/users/reg` | 注册 PocketBase 用户（无需 Token） |
 | `GET` | `/api/list?bucket=&prefix=&delimiter=/` | 列目录 |
 | `DELETE` | `/api/files/{key}?bucket=&recursive=1` | 删除 |
 | `PUT` | `/api/mkdir/{key}?bucket=` | 建目录 |
@@ -103,7 +104,17 @@ http://localhost:3000/api/files/IMG202607141511381.jpg?bucket=github
 | `PUT` | `/api/buckets/{name}` | 设置 bucket 默认后端 `{"backend":"github"}` |
 | `GET` | `/ping` | 健康检查 |
 
-S3 兼容：`/s3`（SigV4）  
+### 注册用户
+
+`POST /api/users/reg`（无需 Token，写入 `POCKETBASE_URL` 的 users 集合）
+
+```bash
+curl -X POST 'http://localhost:3000/api/users/reg' \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"user@example.com","password":"新用户密码"}'
+```
+
+S3 兼容：`/s3`（SigV4）
 WebDAV：`/dav/{bucket}/`（Basic Auth）  
 二者上传后端读 **bucket 在数据库中的配置**，不接受 query/header 覆盖。
 
