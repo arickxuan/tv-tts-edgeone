@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圆形印章生成器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #0d1117;
+  color: #e6edf3;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ===== 左侧预览区 ===== */
+.leftBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #161b22;
+  min-height: 100vh;
+}
+
+.canvas-wrapper {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sealCanvas {
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.toolbar {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #f85149;
+  color: #fff;
+}
+.btn-primary:hover { background: #da3633; transform: translateY(-1px); }
+
+.btn-secondary {
+  background: #21262d;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+}
+.btn-secondary:hover { background: #30363d; }
+
+/* ===== 右侧控制面板 ===== */
+.rightBox {
+  width: 440px;
+  height: 100vh;
+  overflow-y: auto;
+  background: #0d1117;
+  border-left: 1px solid #30363d;
+  padding: 20px 20px 60px;
+}
+
+.rightBox h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #f85149;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #21262d;
+}
+
+.setItemBox {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.setItemBox-title {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.setItem > span:first-child {
+  width: 72px;
+  font-size: 13px;
+  color: #c9d1d9;
+  flex-shrink: 0;
+}
+
+.setItem input[type="text"],
+.setItem select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  flex: 1;
+  outline: none;
+  transition: border-color 0.2s;
+  height: 28px;
+}
+
+.setItem input[type="text"]:focus,
+.setItem select:focus {
+  border-color: #f85149;
+}
+
+.setItem select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+/* 数字输入组件 */
+.num-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.num-btn {
+  width: 26px;
+  height: 26px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  user-select: none;
+  border-radius: 4px 0 0 4px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.num-btn:hover { background: #30363d; }
+
+.num-btn:last-child { border-radius: 0 4px 4px 0; }
+
+.num-input {
+  width: 48px;
+  height: 26px;
+  background: #0d1117;
+  border-top: 1px solid #30363d;
+  border-bottom: 1px solid #30363d;
+  color: #e6edf3;
+  text-align: center;
+  font-size: 13px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+/* 复选框 */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #c9d1d9;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #f85149;
+  cursor: pointer;
+}
+
+/* 颜色选择 */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.color-row > span {
+  width: 72px;
+  color: #c9d1d9;
+}
+
+input[type="color"] {
+  width: 44px;
+  height: 28px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  padding: 2px;
+}
+
+/* 滑块 */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.slider-row > span:first-child {
+  width: 50px;
+  color: #c9d1d9;
+  flex-shrink: 0;
+}
+
+input[type="range"] {
+  flex: 1;
+  accent-color: #f85149;
+  height: 4px;
+}
+
+.slider-value {
+  width: 36px;
+  text-align: right;
+  color: #f85149;
+  font-variant-numeric: tabular-nums;
+}
+
+.warning {
+  color: #f85149;
+  font-size: 12px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: rgba(248,81,73,0.08);
+  border: 1px solid rgba(248,81,73,0.2);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+/* 滚动条 */
+.rightBox::-webkit-scrollbar { width: 6px; }
+.rightBox::-webkit-scrollbar-track { background: transparent; }
+.rightBox::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+.rightBox::-webkit-scrollbar-thumb:hover { background: #484f58; }
+</style>
+</head>
+<body>
+
+<!-- ===== 左侧：印章预览 ===== -->
+<div class="leftBox">
+  <div class="canvas-wrapper">
+    <canvas id="sealCanvas" width="320" height="320"></canvas>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="downloadSeal()">下载印章 PNG</button>
+    <button class="btn btn-secondary" onclick="downloadSeal(true)">下载透明背景</button>
+  </div>
+</div>
+
+<!-- ===== 右侧：配置面板 ===== -->
+<div class="rightBox">
+  <h2>自定义印章</h2>
+
+  <!-- 公司名（上方弧形） -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">公司名称（上方弧形文字）</div>
+    <div class="setItem"><span>公司：</span>
+      <input type="text" id="companyText" value="某某某科技有限公司" oninput="render()">
+    </div>
+    <div class="setItem"><span>字体</span>
+      <select id="companyFont" onchange="render()">
+        <option value="宋体">宋体</option>
+        <option value="仿宋">仿宋</option>
+        <option value="楷体">楷体</option>
+        <option value="黑体">黑体</option>
+        <option value="汉仪长宋简">汉仪长宋简</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字号</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('companyFontSize',-1,10,100)">&#8722;</div>
+        <input type="text" class="num-input" id="companyFontSize" value="16" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('companyFontSize',1,10,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>粗细</span>
+      <select id="companyWeight" onchange="render()">
+        <option value="normal">默认</option>
+        <option value="bold">加粗</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字间距</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('companyLetterSpacing',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="companyLetterSpacing" value="2" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('companyLetterSpacing',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>字边距</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('companyCharMargin',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="companyCharMargin" value="-12" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('companyCharMargin',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>文字高度</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('companyTextHeight',-0.1,0.2,2)">&#8722;</div>
+        <input type="text" class="num-input" id="companyTextHeight" value="1.8" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('companyTextHeight',0.1,0.2,2)">+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 章名 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">章名（中部文字）</div>
+    <div class="setItem"><span>章名：</span>
+      <input type="text" id="sealNameText" value="专用章" oninput="render()">
+    </div>
+    <div class="setItem"><span>字体</span>
+      <select id="sealNameFont" onchange="render()">
+        <option value="宋体">宋体</option>
+        <option value="仿宋">仿宋</option>
+        <option value="楷体">楷体</option>
+        <option value="黑体">黑体</option>
+        <option value="汉仪长宋简">汉仪长宋简</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字号</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('sealNameFontSize',-1,10,100)">&#8722;</div>
+        <input type="text" class="num-input" id="sealNameFontSize" value="18" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('sealNameFontSize',1,10,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>粗细</span>
+      <select id="sealNameWeight" onchange="render()">
+        <option value="normal">默认</option>
+        <option value="bold">加粗</option>
+      </select>
+    </div>
+    <div class="setItem"><span>上下距离</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('sealNameTopBottom',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="sealNameTopBottom" value="-16" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('sealNameTopBottom',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>左右距离</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('sealNameLeftRight',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="sealNameLeftRight" value="0" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('sealNameLeftRight',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>文字高度</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('sealNameTextHeight',-0.1,0.2,2)">&#8722;</div>
+        <input type="text" class="num-input" id="sealNameTextHeight" value="1.2" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('sealNameTextHeight',0.1,0.2,2)">+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中心内容 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">中心内容</div>
+    <div class="setItem"><span>中心内容：</span>
+      <input type="text" id="centerText" value="&#9733;" oninput="render()">
+    </div>
+    <div class="setItem"><span>字体</span>
+      <select id="centerFont" onchange="render()">
+        <option value="宋体">宋体</option>
+        <option value="仿宋">仿宋</option>
+        <option value="楷体">楷体</option>
+        <option value="黑体">黑体</option>
+        <option value="汉仪长宋简">汉仪长宋简</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字号</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('centerFontSize',-1,10,100)">&#8722;</div>
+        <input type="text" class="num-input" id="centerFontSize" value="50" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('centerFontSize',1,10,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>粗细</span>
+      <select id="centerWeight" onchange="render()">
+        <option value="normal">默认</option>
+        <option value="bold">加粗</option>
+      </select>
+    </div>
+    <div class="setItem"><span>上下距离</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('centerTopBottom',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="centerTopBottom" value="0" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('centerTopBottom',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>左右距离</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('centerLeftRight',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="centerLeftRight" value="0" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('centerLeftRight',1,-100,100)">+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 防伪码（下方弧形） -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">防伪码（下方弧形文字）</div>
+    <div class="setItem"><span>防伪码：</span>
+      <input type="text" id="antiCodeText" value="1234567890123" oninput="render()">
+    </div>
+    <div class="setItem"><span>字体</span>
+      <select id="antiCodeFont" onchange="render()">
+        <option value="宋体">宋体</option>
+        <option value="仿宋">仿宋</option>
+        <option value="楷体">楷体</option>
+        <option value="黑体">黑体</option>
+        <option value="汉仪长宋简">汉仪长宋简</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字号</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('antiCodeFontSize',-1,10,100)">&#8722;</div>
+        <input type="text" class="num-input" id="antiCodeFontSize" value="10" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('antiCodeFontSize',1,10,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>粗细</span>
+      <select id="antiCodeWeight" onchange="render()">
+        <option value="normal">默认</option>
+        <option value="bold">加粗</option>
+      </select>
+    </div>
+    <div class="setItem"><span>字间距</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('antiCodeLetterSpacing',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="antiCodeLetterSpacing" value="-5" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('antiCodeLetterSpacing',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>矫正</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('antiCodeCorrection',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="antiCodeCorrection" value="-1" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('antiCodeCorrection',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>字边距</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('antiCodeCharMargin',-1,-100,100)">&#8722;</div>
+        <input type="text" class="num-input" id="antiCodeCharMargin" value="5" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('antiCodeCharMargin',1,-100,100)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>文字高度</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('antiCodeTextHeight',-0.1,0.2,2)">&#8722;</div>
+        <input type="text" class="num-input" id="antiCodeTextHeight" value="1" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('antiCodeTextHeight',0.1,0.2,2)">+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 边线设置 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">边线设置</div>
+    <div class="setItem"><span>外边线</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('outerBorder',-1,1,6)">&#8722;</div>
+        <input type="text" class="num-input" id="outerBorder" value="3" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('outerBorder',1,1,6)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>内边线</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('innerBorder',-1,1,6)">&#8722;</div>
+        <input type="text" class="num-input" id="innerBorder" value="1" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('innerBorder',1,1,6)">+</div>
+      </div>
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="innerBorderShow" checked onchange="render()">
+      <span>显示内边线</span>
+    </label>
+  </div>
+
+  <!-- 颜色与尺寸 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">颜色与尺寸</div>
+    <div class="color-row">
+      <span>颜色：</span>
+      <input type="color" id="sealColor" value="#ff0000" onchange="render()">
+    </div>
+    <div class="setItem"><span>印章尺寸</span>
+      <select id="sealSize" onchange="render()">
+        <option value="80">80</option>
+        <option value="128">128</option>
+        <option value="160">160</option>
+        <option value="240">240</option>
+        <option value="256">256</option>
+        <option value="320" selected>320</option>
+        <option value="480">480</option>
+        <option value="512">512</option>
+        <option value="640">640</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 虚线边框 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">虚线边框</div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="dashedEnabled" onchange="render()">
+      <span>启用虚线边框</span>
+    </label>
+    <div class="setItem"><span>分段数</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('dashedSegments',-1,10,40)">&#8722;</div>
+        <input type="text" class="num-input" id="dashedSegments" value="20" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('dashedSegments',1,10,40)">+</div>
+      </div>
+    </div>
+    <div class="setItem"><span>间隙比例</span>
+      <div class="num-group">
+        <div class="num-btn" onclick="adjustNum('dashedGapRatio',-1,1,20)">&#8722;</div>
+        <input type="text" class="num-input" id="dashedGapRatio" value="5" onchange="render()">
+        <div class="num-btn" onclick="adjustNum('dashedGapRatio',1,1,20)">+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 印章老化 -->
+  <div class="setItemBox">
+    <div class="setItemBox-title">印章老化</div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="agingEnabled" checked onchange="render()">
+      <span>启用印泥老化</span>
+    </label>
+    <div class="slider-row">
+      <span>倍率</span>
+      <input type="range" id="agingMultiplier" min="1" max="4" value="1" oninput="updateSlider();render()">
+      <span class="slider-value" id="agingMultiplierVal">1</span>
+    </div>
+    <div class="slider-row">
+      <span>X轴</span>
+      <input type="range" id="agingX" min="-100" max="100" value="0" oninput="updateSlider();render()">
+      <span class="slider-value" id="agingXVal">0</span>
+    </div>
+    <div class="slider-row">
+      <span>Y轴</span>
+      <input type="range" id="agingY" min="-100" max="100" value="0" oninput="updateSlider();render()">
+      <span class="slider-value" id="agingYVal">0</span>
+    </div>
+  </div>
+
+  <div class="warning">⚠️ 郑重声明：本工具生成的印章仅供个人学习测试使用，请勿用于非法用途，否则后果自负！</div>
+</div>
+
+<script>
+// ==================== 工具函数 ====================
+function val(id) {
+  const el = document.getElementById(id);
+  return el.type === 'checkbox' ? el.checked : el.value;
+}
+
+function num(id) {
+  return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function adjustNum(id, delta, min, max) {
+  const el = document.getElementById(id);
+  let v = parseFloat(el.value) || 0;
+  v += delta;
+  v = Math.max(min, Math.min(max, v));
+  el.value = Math.round(v * 10) / 10;
+  render();
+}
+
+function updateSlider() {
+  document.getElementById('agingMultiplierVal').textContent = val('agingMultiplier');
+  document.getElementById('agingXVal').textContent = val('agingX');
+  document.getElementById('agingYVal').textContent = val('agingY');
+}
+
+// ==================== 主渲染函数 ====================
+function render() {
+  const canvas = document.getElementById('sealCanvas');
+  const ctx = canvas.getContext('2d');
+  const size = num('sealSize');
+
+  canvas.width = size;
+  canvas.height = size;
+
+  // 限制预览显示尺寸
+  const maxDisplay = 420;
+  if (size > maxDisplay) {
+    canvas.style.width = maxDisplay + 'px';
+    canvas.style.height = maxDisplay + 'px';
+  } else {
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+  }
+
+  // 清空画布（透明背景）
+  ctx.clearRect(0, 0, size, size);
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const color = val('sealColor');
+
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+
+  // === 外边线 ===
+  const outerWidth = num('outerBorder');
+  const outerRadius = size / 2 - outerWidth / 2;
+  ctx.lineWidth = outerWidth;
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // === 内边线 ===
+  const innerShow = val('innerBorderShow');
+  const innerWidth = num('innerBorder');
+  let innerRadius = outerRadius;
+  if (innerShow) {
+    innerRadius = outerRadius - outerWidth - innerWidth - 2;
+    ctx.lineWidth = innerWidth;
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // === 计算文字绘制半径 ===
+  const borderOffset = outerWidth + (innerShow ? innerWidth + 2 : 0);
+  const textRadius = outerRadius - borderOffset - 4;
+
+  // === 公司名（上方弧形文字）===
+  drawArcText(ctx, {
+    text: val('companyText'),
+    font: val('companyFont'),
+    fontSize: num('companyFontSize'),
+    weight: val('companyWeight'),
+    letterSpacing: num('companyLetterSpacing'),
+    charMargin: num('companyCharMargin'),
+    textHeight: num('companyTextHeight')
+  }, cx, cy, textRadius, color, 'top');
+
+  // === 防伪码（下方弧形文字）===
+  drawArcText(ctx, {
+    text: val('antiCodeText'),
+    font: val('antiCodeFont'),
+    fontSize: num('antiCodeFontSize'),
+    weight: val('antiCodeWeight'),
+    letterSpacing: num('antiCodeLetterSpacing'),
+    correction: num('antiCodeCorrection'),
+    charMargin: num('antiCodeCharMargin'),
+    textHeight: num('antiCodeTextHeight')
+  }, cx, cy, textRadius, color, 'bottom');
+
+  // === 章名 ===
+  drawCenterText(ctx, {
+    text: val('sealNameText'),
+    font: val('sealNameFont'),
+    fontSize: num('sealNameFontSize'),
+    weight: val('sealNameWeight'),
+    topBottom: num('sealNameTopBottom'),
+    leftRight: num('sealNameLeftRight'),
+    textHeight: num('sealNameTextHeight')
+  }, cx, cy, color);
+
+  // === 中心内容 ===
+  drawCenterText(ctx, {
+    text: val('centerText'),
+    font: val('centerFont'),
+    fontSize: num('centerFontSize'),
+    weight: val('centerWeight'),
+    topBottom: num('centerTopBottom'),
+    leftRight: num('centerLeftRight'),
+    textHeight: 1
+  }, cx, cy, color);
+
+  // === 虚线边框 ===
+  if (val('dashedEnabled')) {
+    drawDashedBorder(ctx, cx, cy, textRadius - 2, num('dashedSegments'), num('dashedGapRatio'), color);
+  }
+
+  // === 印章老化效果 ===
+  if (val('agingEnabled')) {
+    applyAging(ctx, size, num('agingMultiplier'), num('agingX'), num('agingY'), cx, cy);
+  }
+}
+
+// ==================== 弧形文字绘制 ====================
+function drawArcText(ctx, cfg, cx, cy, baseRadius, color, position) {
+  if (!cfg.text) return;
+
+  const fontWeight = cfg.weight === 'bold' ? 'bold ' : '';
+  ctx.font = fontWeight + cfg.fontSize + 'px "' + cfg.font + '", serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const chars = cfg.text.split('');
+  const n = chars.length;
+  if (n === 0) return;
+
+  // 测量每个字符宽度
+  const charWidths = chars.map(function(c) { return ctx.measureText(c).width; });
+  const totalWidth = charWidths.reduce(function(a, b) { return a + b; }, 0) + cfg.letterSpacing * (n - 1);
+
+  // 绘制半径（字边距调整）
+  const drawRadius = baseRadius + (cfg.charMargin || 0);
+  if (drawRadius <= 0) return;
+
+  // 总弧度跨度
+  const totalAngle = totalWidth / drawRadius;
+
+  // 起始角度
+  let startAngle;
+  if (position === 'top') {
+    startAngle = -Math.PI / 2 - totalAngle / 2;
+  } else {
+    startAngle = Math.PI / 2 + totalAngle / 2;
+    if (cfg.correction) {
+      startAngle += cfg.correction / drawRadius;
+    }
+  }
+
+  let currentAngle = startAngle;
+
+  for (let i = 0; i < n; i++) {
+    const charWidth = charWidths[i];
+    const charAngle = charWidth / drawRadius;
+
+    let angle;
+    if (position === 'top') {
+      angle = currentAngle + charAngle / 2;
+      currentAngle += charAngle + cfg.letterSpacing / drawRadius;
+    } else {
+      angle = currentAngle - charAngle / 2;
+      currentAngle -= charAngle + cfg.letterSpacing / drawRadius;
+    }
+
+    const x = cx + drawRadius * Math.cos(angle);
+    const y = cy + drawRadius * Math.sin(angle);
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    if (position === 'top') {
+      ctx.rotate(angle + Math.PI / 2);
+    } else {
+      ctx.rotate(angle - Math.PI / 2);
+    }
+
+    // 文字高度缩放
+    const th = cfg.textHeight || 1;
+    if (th !== 1) {
+      ctx.scale(1, th);
+    }
+
+    ctx.fillText(chars[i], 0, 0);
+    ctx.restore();
+  }
+}
+
+// ==================== 中心文字绘制 ====================
+function drawCenterText(ctx, cfg, cx, cy, color) {
+  if (!cfg.text) return;
+
+  const fontWeight = cfg.weight === 'bold' ? 'bold ' : '';
+  ctx.font = fontWeight + cfg.fontSize + 'px "' + cfg.font + '", serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const x = cx + (cfg.leftRight || 0);
+  const y = cy + (cfg.topBottom || 0);
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  const th = cfg.textHeight || 1;
+  if (th !== 1) {
+    ctx.scale(1, th);
+  }
+
+  ctx.fillText(cfg.text, 0, 0);
+  ctx.restore();
+}
+
+// ==================== 虚线边框绘制 ====================
+function drawDashedBorder(ctx, cx, cy, radius, segments, gapRatio, color) {
+  if (radius <= 0) return;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+
+  const segmentAngle = (Math.PI * 2) / segments;
+  // gapRatio 越大间隙越大
+  const dashFraction = 1 / (1 + gapRatio / 5);
+  const dashAngle = segmentAngle * dashFraction;
+
+  for (let i = 0; i < segments; i++) {
+    const start = i * segmentAngle - Math.PI / 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, start, start + dashAngle);
+    ctx.stroke();
+  }
+}
+
+// ==================== 印章老化效果 ====================
+function applyAging(ctx, size, multiplier, offsetX, offsetY, cx, cy) {
+  const imageData = ctx.getImageData(0, 0, size, size);
+  const data = imageData.data;
+
+  // 污渍中心位置
+  const smudgeX = cx + offsetX;
+  const smudgeY = cy + offsetY;
+  const smudgeRadius = size * 0.2;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha === 0) continue;
+
+    const pixelIndex = i / 4;
+    const px = pixelIndex % size;
+    const py = Math.floor(pixelIndex / size);
+
+    // 距污渍中心的距离
+    const dist = Math.sqrt((px - smudgeX) * (px - smudgeX) + (py - smudgeY) * (py - smudgeY));
+    const smudgeFactor = Math.max(0, 1 - dist / smudgeRadius);
+
+    // 随机噪声
+    const noise = Math.random();
+
+    // 基础移除概率
+    let removeProb = 0.02 * multiplier;
+    // 污渍区域增加移除概率
+    removeProb += smudgeFactor * 0.12 * multiplier;
+
+    if (noise < removeProb) {
+      // 完全移除像素
+      data[i + 3] = 0;
+    } else if (noise < removeProb + 0.06 * multiplier) {
+      // 大幅减淡
+      data[i + 3] = Math.floor(alpha * (0.2 + Math.random() * 0.3));
+    } else if (noise < removeProb + 0.12 * multiplier) {
+      // 轻微减淡
+      data[i + 3] = Math.floor(alpha * (0.5 + Math.random() * 0.3));
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ==================== 下载 ====================
+function downloadSeal(transparent) {
+  const canvas = document.getElementById('sealCanvas');
+
+  if (!transparent) {
+    // 白色背景版本
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = canvas.width;
+    tmpCanvas.height = canvas.height;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.fillStyle = '#ffffff';
+    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+    tmpCtx.drawImage(canvas, 0, 0);
+    var link = document.createElement('a');
+    link.download = 'seal.png';
+    link.href = tmpCanvas.toDataURL('image/png');
+    link.click();
+  } else {
+    var link = document.createElement('a');
+    link.download = 'seal.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+}
+
+// ==================== 键盘支持 ====================
+document.addEventListener('keydown', function(e) {
+  if (e.target.classList && e.target.classList.contains('num-input')) {
+    if (e.key === 'ArrowUp') { e.preventDefault(); e.target.value = parseFloat(e.target.value) + 1; render(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); e.target.value = parseFloat(e.target.value) - 1; render(); }
+  }
+});
+
+// 初始渲染
+render();
+</script>
+</body>
+</html>
