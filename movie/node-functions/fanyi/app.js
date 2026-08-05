@@ -79,13 +79,6 @@ app.get('/', (req, res) => {
     res.type('html').send(TEST_PAGE);
 });
 
-// 独立运行时监听端口
-const PORT = process.env.FANYI_PORT || 8089;
-if (import.meta.url === `file://${process.argv[1]}`) {
-    app.listen(PORT, () => {
-        console.log(`翻译服务已启动: http://localhost:${PORT}`);
-    });
-}
 
 export default app;
 
