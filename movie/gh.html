@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>黄果短剧媒体流解析</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --line: #d9dee7;
+      --accent: #0f766e;
+      --accent-2: #0b5d58;
+      --warn: #b45309;
+      --error: #b42318;
+      --ok: #067647;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 9px 12px;
+      cursor: pointer;
+      min-height: 38px;
+    }
+
+    button:hover {
+      background: var(--accent-2);
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--accent);
+    }
+
+    button.secondary:hover {
+      background: #eef8f6;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, .12);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .topbar {
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      max-width: 520px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--muted);
+      background: #fbfcfd;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .main {
+      max-width: 1420px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 22px 28px;
+      display: grid;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-width: 0;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 14px 14px 0;
+      font-size: 15px;
+    }
+
+    .controls,
+    .parse-box {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .three {
+      display: grid;
+      grid-template-columns: 1fr 96px auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+
+    .meta {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      min-height: 54px;
+      background: #fbfcfd;
+    }
+
+    .meta b {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .meta span {
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0 14px 14px;
+    }
+
+    .tabs button {
+      white-space: nowrap;
+      padding: 7px 10px;
+      min-height: 34px;
+    }
+
+    .tabs button.active {
+      background: #123c3a;
+      border-color: #123c3a;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+      gap: 16px;
+      padding: 0 14px 14px;
+    }
+
+    .list {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      max-height: calc(100vh - 278px);
+      background: #fbfcfd;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+      gap: 10px;
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      color: var(--text);
+      background: transparent;
+      padding: 9px;
+      text-align: left;
+    }
+
+    .item:hover,
+    .item.active {
+      background: #edf7f5;
+    }
+
+    .poster {
+      width: 58px;
+      aspect-ratio: 3 / 4;
+      border-radius: 5px;
+      background: #e7ebf0;
+      object-fit: cover;
+    }
+
+    .name {
+      font-weight: 650;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .remark {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .tracks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: start;
+      max-height: 210px;
+      overflow: auto;
+      padding: 1px;
+    }
+
+    .tracks button {
+      min-width: 68px;
+      padding: 7px 9px;
+      min-height: 34px;
+    }
+
+    .result {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .stream {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfd;
+      overflow-wrap: anywhere;
+    }
+
+    .stream strong {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--ok);
+    }
+
+    .stream code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    video {
+      width: 100%;
+      max-height: 440px;
+      background: #111827;
+      border-radius: 8px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .danger {
+      color: var(--error);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    @media (max-width: 980px) {
+      .topbar,
+      .main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .topbar,
+      .main,
+      .content,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+      }
+
+      .list {
+        max-height: 420px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .row,
+      .three {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>黄果短剧媒体流解析</h1>
+          <div class="sub">从远程扩展源码读取规则，抓取详情页与播放页，提取最终播放地址。</div>
+        </div>
+        <div id="status" class="status">准备加载扩展源码。</div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel">
+        <h2>扩展源码</h2>
+        <div class="controls">
+          <div class="row">
+            <input id="sourceUrl" value="https://raw.githubusercontent.com/Yswag/xptv-extensions/refs/heads/main/js/huangguo.js">
+            <button id="loadSource">获取</button>
+          </div>
+          <textarea id="sourceCode" spellcheck="false" placeholder="扩展源码会显示在这里"></textarea>
+        </div>
+        <div class="meta-grid">
+          <div class="meta"><b>站点</b><span id="siteMeta">-</span></div>
+          <div class="meta"><b>分类</b><span id="tabsMeta">-</span></div>
+          <div class="meta"><b>播放字段</b><span id="playMeta">-</span></div>
+          <div class="meta"><b>UA</b><span id="uaMeta">-</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>在线解析</h2>
+        <div class="controls">
+          <div class="three">
+            <select id="tabSelect"></select>
+            <input id="pageInput" type="number" min="1" value="1" aria-label="页码">
+            <button id="loadList">加载列表</button>
+          </div>
+          <div class="row">
+            <input id="searchInput" placeholder="搜索短剧名称">
+            <button id="searchBtn" class="secondary">搜索</button>
+          </div>
+          <div id="listHint" class="hint">先加载源码，然后选择分类或搜索。</div>
+        </div>
+        <div class="tabs" id="tabs"></div>
+        <div class="content">
+          <div class="list" id="cards"></div>
+          <div class="result">
+            <div class="stream">
+              <strong id="currentTitle">未选择影片</strong>
+              <div class="tracks" id="tracks"></div>
+            </div>
+            <div class="stream">
+              <strong>媒体流</strong>
+              <code id="streamUrl">等待解析。</code>
+            </div>
+            <video id="player" controls playsinline></video>
+            <div class="hint">如果视频无法直接播放，但地址是 m3u8，可复制到支持 HLS 的播放器；Safari 通常可直接播放。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="grid-column: 1 / -1;">
+        <h2>手动解析播放页</h2>
+        <div class="parse-box">
+          <div class="row">
+            <input id="playUrl" placeholder="播放页 URL，例如 https://huangguoai.com/play/xxx/...">
+            <button id="parseUrl">抓取并解析</button>
+          </div>
+          <textarea id="htmlInput" spellcheck="false" placeholder="也可以把播放页 HTML 粘贴到这里，再点击解析粘贴内容"></textarea>
+          <div class="row">
+            <input id="episodeInput" value="1" placeholder="集数 key，例如 1">
+            <button id="parseHtml" class="secondary">解析粘贴内容</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const DEFAULT_SOURCE = 'https://raw.githubusercontent.com/Yswag/xptv-extensions/refs/heads/main/js/huangguo.js';
+    const state = {
+      source: '',
+      site: 'https://huangguoai.com',
+      ua: navigator.userAgent,
+      tabs: [{ name: '首页', id: 'home' }],
+      selectedTab: 'home',
+      selectedVod: '',
+      activeCard: null,
+      hls: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(text, type) {
+      const el = $('status');
+      el.textContent = text;
+      el.className = 'status ' + (type || '');
+    }
+
+    function stripTags(value) {
+      const node = document.createElement('template');
+      node.innerHTML = String(value || '');
+      return (node.content.textContent || '').trim();
+    }
+
+    function fix(url) {
+      if (!url) return '';
+      if (url.startsWith('//')) return 'https:' + url;
+      if (url.startsWith('/')) return state.site + url;
+      return url;
+    }
+
+    function imgSrc(url) {
+      const fixed = fix(url || '');
+      return fixed.startsWith('http') ? fixed.replace(/\?.*/, '') : fixed;
+    }
+
+    async function fetchText(url, referer) {
+      const options = referer ? { referrer: referer } : {};
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(response.status + ' ' + response.statusText);
+      return response.text();
+    }
+
+    function parseSource(code) {
+      state.source = code;
+      const siteMatch = code.match(/const\s+SITE\s*=\s*['"]([^'"]+)['"]/);
+      const uaMatch = code.match(/const\s+UA\s*=\s*['"]([\s\S]*?)['"]/);
+      const tabsBlock = code.match(/const\s+TABS\s*=\s*\[([\s\S]*?)\]/);
+      if (siteMatch) state.site = siteMatch[1];
+      if (uaMatch) state.ua = uaMatch[1].replace(/\s+/g, ' ').trim();
+      if (tabsBlock) {
+        const tabs = [];
+        const re = /\{\s*name:\s*['"]([^'"]+)['"]\s*,\s*id:\s*['"]([^'"]+)['"]\s*\}/g;
+        let match;
+        while ((match = re.exec(tabsBlock[1]))) tabs.push({ name: match[1], id: match[2] });
+        if (tabs.length) state.tabs = tabs;
+      }
+      $('siteMeta').textContent = state.site;
+      $('tabsMeta').textContent = state.tabs.map((tab) => tab.name).join(' / ');
+      $('playMeta').textContent = code.includes('videoInitialData') ? 'videoInitialData.epPlaySrcs / videoSrc' : '-';
+      $('uaMeta').textContent = state.ua.slice(0, 72) + (state.ua.length > 72 ? '...' : '');
+      renderTabs();
+    }
+
+    function renderTabs() {
+      const select = $('tabSelect');
+      const tabs = $('tabs');
+      select.innerHTML = '';
+      tabs.innerHTML = '';
+      state.tabs.forEach((tab) => {
+        const option = document.createElement('option');
+        option.value = tab.id;
+        option.textContent = tab.name;
+        select.appendChild(option);
+
+        const button = document.createElement('button');
+        button.textContent = tab.name;
+        button.className = tab.id === state.selectedTab ? 'active' : '';
+        button.addEventListener('click', () => {
+          state.selectedTab = tab.id;
+          select.value = tab.id;
+          renderTabs();
+          loadList();
+        });
+        tabs.appendChild(button);
+      });
+      select.value = state.selectedTab;
+    }
+
+    function gridSlices(html, allGrids) {
+      const re = /<div\s+class="[^"]*\bhg-card-grid\b[^"]*"[^>]*>/g;
+      const starts = [];
+      let match;
+      while ((match = re.exec(html))) starts.push(match.index + match[0].length);
+      if (!starts.length) return [];
+      const slices = [];
+      const count = allGrids ? starts.length : Math.min(1, starts.length);
+      for (let i = 0; i < count; i++) {
+        slices.push(html.slice(starts[i], i + 1 < starts.length ? starts[i + 1] : html.length));
+      }
+      return slices;
+    }
+
+    function cardBlocks(slice) {
+      const re = /<div\s+class="[^"]*\bhg-drama-card\b[^"]*"[^>]*>/g;
+      const starts = [];
+      let match;
+      while ((match = re.exec(slice))) starts.push(match.index + match[0].length);
+      return starts.map((start, index) => slice.slice(start, index + 1 < starts.length ? starts[index + 1] : slice.length));
+    }
+
+    function parseCardBlock(block) {
+      const link = block.match(/href="[^"]*\/detail\/(\d+)\/[^"]*"/);
+      if (!link) return null;
+      const titleMatch = block.match(/hg-drama-card__title[^>]*>([\s\S]*?)<\/a>/) ||
+        block.match(/<a[^>]+href="[^"]*\/detail\/\d+\/"[^>]*>([\s\S]*?)<\/a>/);
+      const title = titleMatch ? stripTags(titleMatch[1]) : '';
+      if (!title) return null;
+      const image = block.match(/data-src="([^"]+)"/) || block.match(/src="([^"]+)"/);
+      const ep = block.match(/hg-drama-card__episode[^>]*>([\s\S]*?)<\/span>/);
+      const score = block.match(/hg-drama-card__score[^>]*>([\s\S]*?)<\/span>/);
+      return {
+        id: link[1],
+        name: title,
+        pic: imgSrc(image ? image[1] : ''),
+        remark: [ep ? stripTags(ep[1]) : '', score ? stripTags(score[1]) : ''].filter(Boolean).join(' · ')
+      };
+    }
+
+    function parseGridCards(html, allGrids) {
+      const seen = new Set();
+      const list = [];
+      gridSlices(html, allGrids).forEach((slice) => {
+        cardBlocks(slice).forEach((block) => {
+          const item = parseCardBlock(block);
+          if (item && !seen.has(item.id)) {
+            seen.add(item.id);
+            list.push(item);
+          }
+        });
+      });
+      return list;
+    }
+
+    function parseRanks(html) {
+      const listMatch = html.match(/<div\s+class="[^"]*\bhg-rank-list\b[^"]*"[^>]*>/);
+      const slice = html.slice(listMatch ? listMatch.index + listMatch[0].length : 0);
+      const re = /<div\s+class="[^"]*\bhg-rank-item\b[^"]*"[^>]*>/g;
+      const starts = [];
+      let match;
+      while ((match = re.exec(slice))) starts.push(match.index + match[0].length);
+      const seen = new Set();
+      return starts.map((start, index) => {
+        const block = slice.slice(start, index + 1 < starts.length ? starts[index + 1] : slice.length);
+        const link = block.match(/href="[^"]*\/detail\/(\d+)\/[^"]*"/);
+        if (!link || seen.has(link[1])) return null;
+        seen.add(link[1]);
+        const title = block.match(/hg-rank-item__title[^>]*>([\s\S]*?)<\/h2>/) ||
+          block.match(/<a[^>]+href="[^"]*\/detail\/\d+\/"[^>]*>([\s\S]*?)<\/a>/);
+        const image = block.match(/data-src="([^"]+)"/) || block.match(/src="([^"]+)"/);
+        const tags = block.match(/hg-rank-item__tags[^>]*>([\s\S]*?)<\/div>/);
+        return title ? {
+          id: link[1],
+          name: stripTags(title[1]),
+          pic: imgSrc(image ? image[1] : ''),
+          remark: tags ? stripTags(tags[1]) : ''
+        } : null;
+      }).filter(Boolean);
+    }
+
+    function parseTracks(html) {
+      const tracks = [];
+      const grid = html.match(/<div\s+class="[^"]*\bhg-web-detail__ep-grid\b[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+      if (grid) {
+        const re = /<a\b[^>]*>[\s\S]*?<\/a>/g;
+        let match;
+        while ((match = re.exec(grid[1]))) {
+          const tag = match[0];
+          const href = tag.match(/href="([^"]+)"/);
+          if (!href) continue;
+          const epId = tag.match(/data-ep-id="([^"]*)"/);
+          const ep = epId ? epId[1] : '';
+          tracks.push({ name: ep ? '第' + ep + '集' : stripTags(tag), url: fix(href[1]), ep: ep || stripTags(tag).replace(/\D/g, '') || '1' });
+        }
+      }
+      if (!tracks.length) {
+        const play = html.match(/<a\b[^>]*class="[^"]*\bhg-web-detail__play\b[^"]*"[^>]*href="([^"]+)"/);
+        if (play) tracks.push({ name: '第1集', url: fix(play[1]), ep: '1' });
+      }
+      return tracks;
+    }
+
+    function parsePlayInfo(html, ep) {
+      const script = html.match(/id="videoInitialData"[^>]*>([\s\S]*?)<\/script>/);
+      let play = '';
+      if (script) {
+        try {
+          const data = JSON.parse(script[1]);
+          const srcs = data && data.epPlaySrcs ? data.epPlaySrcs : {};
+          play = srcs[String(ep || '1')] || data.videoSrc || '';
+        } catch (error) {
+          throw new Error('videoInitialData 不是合法 JSON');
+        }
+      }
+      play = String(play || '').replace(/\\u0026/g, '&');
+      if (play && !play.startsWith('http')) {
+        const match = play.match(/https?:\/\/[^\s"']+/);
+        play = match ? match[0] : '';
+      }
+      if (!play) throw new Error('没有找到媒体流地址');
+      return play;
+    }
+
+    function renderCards(items) {
+      const wrap = $('cards');
+      wrap.innerHTML = '';
+      if (!items.length) {
+        wrap.innerHTML = '<div class="hint" style="padding:12px;">没有解析到列表。</div>';
+        return;
+      }
+      items.forEach((item) => {
+        const button = document.createElement('button');
+        button.className = 'item';
+        const image = document.createElement('img');
+        image.className = 'poster';
+        image.alt = '';
+        image.loading = 'lazy';
+        image.src = item.pic || '';
+        const body = document.createElement('div');
+        body.innerHTML = '<div class="name"></div><div class="remark"></div>';
+        body.querySelector('.name').textContent = item.name;
+        body.querySelector('.remark').textContent = item.remark || 'ID ' + item.id;
+        button.append(image, body);
+        button.addEventListener('click', () => selectVod(item, button));
+        wrap.appendChild(button);
+      });
+    }
+
+    async function loadSource() {
+      try {
+        setStatus('正在获取扩展源码...');
+        const code = await fetchText($('sourceUrl').value.trim() || DEFAULT_SOURCE);
+        $('sourceCode').value = code;
+        parseSource(code);
+        setStatus('源码已加载，规则已提取。', 'ok');
+      } catch (error) {
+        setStatus('源码加载失败：' + error.message, 'danger');
+      }
+    }
+
+    async function loadList() {
+      try {
+        const id = $('tabSelect').value || state.selectedTab;
+        const page = Math.max(1, Number($('pageInput').value || 1));
+        state.selectedTab = id;
+        renderTabs();
+        $('listHint').textContent = '正在加载 ' + id + ' 第 ' + page + ' 页...';
+        const url = id === 'home' ? state.site + '/' : state.site + '/' + id.replace(/^\//, '') + '/' + (page > 1 ? page + '/' : '');
+        const html = await fetchText(url);
+        const items = id.includes('rank') ? parseRanks(html) : parseGridCards(html, id === 'home');
+        renderCards(items);
+        $('listHint').textContent = '解析到 ' + items.length + ' 个条目。';
+      } catch (error) {
+        $('listHint').innerHTML = '<span class="danger">列表加载失败：' + error.message + '</span>';
+      }
+    }
+
+    async function search() {
+      const keyword = $('searchInput').value.trim();
+      if (!keyword) return;
+      try {
+        $('listHint').textContent = '正在搜索 "' + keyword + '"...';
+        const html = await fetchText(state.site + '/search/video/' + encodeURIComponent(keyword) + '/');
+        const items = parseGridCards(html, false);
+        renderCards(items);
+        $('listHint').textContent = '搜索解析到 ' + items.length + ' 个条目。';
+      } catch (error) {
+        $('listHint').innerHTML = '<span class="danger">搜索失败：' + error.message + '</span>';
+      }
+    }
+
+    async function selectVod(item, button) {
+      try {
+        if (state.activeCard) state.activeCard.classList.remove('active');
+        state.activeCard = button;
+        button.classList.add('active');
+        state.selectedVod = item.id;
+        $('currentTitle').textContent = item.name + ' · 正在读取剧集...';
+        $('tracks').innerHTML = '';
+        $('streamUrl').textContent = '等待选择剧集。';
+        $('player').removeAttribute('src');
+        const html = await fetchText(state.site + '/detail/' + item.id + '/');
+        const tracks = parseTracks(html);
+        $('currentTitle').textContent = item.name + ' · ' + tracks.length + ' 集';
+        renderTracks(tracks);
+      } catch (error) {
+        $('currentTitle').textContent = item.name;
+        $('tracks').innerHTML = '<span class="danger">剧集读取失败：' + error.message + '</span>';
+      }
+    }
+
+    function renderTracks(tracks) {
+      const wrap = $('tracks');
+      wrap.innerHTML = '';
+      if (!tracks.length) {
+        wrap.innerHTML = '<span class="hint">没有解析到剧集。</span>';
+        return;
+      }
+      tracks.forEach((track) => {
+        const button = document.createElement('button');
+        button.textContent = track.name;
+        button.addEventListener('click', () => resolveTrack(track));
+        wrap.appendChild(button);
+      });
+    }
+
+    async function resolveTrack(track) {
+      try {
+        $('streamUrl').textContent = '正在解析 ' + track.name + '...';
+        const html = await fetchText(track.url, state.site + '/');
+        const url = parsePlayInfo(html, track.ep);
+        showStream(url);
+      } catch (error) {
+        $('streamUrl').textContent = '解析失败：' + error.message;
+        $('streamUrl').className = 'danger';
+      }
+    }
+
+    function showStream(url) {
+      $('streamUrl').className = '';
+      $('streamUrl').textContent = url;
+      const player = $('player');
+      if (state.hls) {
+        state.hls.destroy();
+        state.hls = null;
+      }
+      player.removeAttribute('src');
+      if (window.Hls && Hls.isSupported()) {
+        window.__hlsDiag = { status: 'initializing', url };
+        state.hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false
+        });
+        state.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+          window.__hlsDiag.status = 'media attached';
+          state.hls.loadSource(url);
+        });
+        state.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+          window.__hlsDiag.status = 'manifest parsed';
+          window.__hlsDiag.levels = data.levels ? data.levels.length : 0;
+          state.hls.startLoad(0);
+          player.play().catch(() => {});
+        });
+        state.hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
+          window.__hlsDiag.status = 'level loaded';
+          window.__hlsDiag.duration = data.details ? data.details.totalduration : null;
+        });
+        state.hls.on(Hls.Events.FRAG_LOADING, (event, data) => {
+          window.__hlsDiag.status = 'fragment loading';
+          window.__hlsDiag.frag = data.frag ? data.frag.url : '';
+        });
+        state.hls.on(Hls.Events.FRAG_BUFFERED, () => {
+          window.__hlsDiag.status = 'fragment buffered';
+        });
+        state.hls.on(Hls.Events.ERROR, (event, data) => {
+          window.__hlsDiag.status = 'error';
+          window.__hlsDiag.error = data;
+          if (data && data.fatal) {
+            $('streamUrl').className = 'warn';
+            $('streamUrl').textContent = url + '\n\n播放器加载失败：' + data.type + ' / ' + data.details;
+          }
+        });
+        state.hls.attachMedia(player);
+        return;
+      }
+      if (player.canPlayType('application/vnd.apple.mpegurl')) {
+        player.src = url;
+        player.load();
+        player.play().catch(() => {});
+        return;
+      }
+      player.src = url;
+      player.load();
+      $('streamUrl').className = 'warn';
+      $('streamUrl').textContent = url + '\n\n当前浏览器不支持 HLS 播放，请复制地址到支持 m3u8 的播放器。';
+    }
+
+    async function parsePlayUrl() {
+      try {
+        const url = $('playUrl').value.trim();
+        if (!url) return;
+        $('streamUrl').textContent = '正在抓取播放页...';
+        const html = await fetchText(url, state.site + '/');
+        $('htmlInput').value = html;
+        showStream(parsePlayInfo(html, $('episodeInput').value));
+      } catch (error) {
+        $('streamUrl').textContent = '解析失败：' + error.message;
+        $('streamUrl').className = 'danger';
+      }
+    }
+
+    function parsePastedHtml() {
+      try {
+        showStream(parsePlayInfo($('htmlInput').value, $('episodeInput').value));
+      } catch (error) {
+        $('streamUrl').textContent = '解析失败：' + error.message;
+        $('streamUrl').className = 'danger';
+      }
+    }
+
+    $('loadSource').addEventListener('click', loadSource);
+    $('loadList').addEventListener('click', loadList);
+    $('searchBtn').addEventListener('click', search);
+    $('tabSelect').addEventListener('change', (event) => {
+      state.selectedTab = event.target.value;
+      renderTabs();
+    });
+    $('parseUrl').addEventListener('click', parsePlayUrl);
+    $('parseHtml').addEventListener('click', parsePastedHtml);
+    $('searchInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') search();
+    });
+
+    loadSource().then(loadList);
+  </script>
+</body>
+</html>
